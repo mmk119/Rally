@@ -1,0 +1,25 @@
+# Written documentation and local AI tooling (kept local, not pushed)
+CLAUDE.md
+*.pdf
+docs/
+.claude/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.local
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

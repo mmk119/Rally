@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/*
+  Dark premium theme for a racket sports club:
+  near black base with a green cast, one neon lime accent for CTAs,
+  high contrast text. The slate and rally scales are remapped to dark
+  equivalents so the whole app inherits the theme consistently.
+*/
+@theme {
+  --font-display: "Barlow Condensed", sans-serif;
+  --font-sans: "Barlow", sans-serif;
+
+  /* surfaces */
+  --color-night: #0a0f0b;
+  --color-card: #141b15;
+  --color-raised: #1b241c;
+
+  /* remapped neutral scale (dark) */
+  --color-slate-50: #18211a;
+  --color-slate-100: #1f2a21;
+  --color-slate-200: #2b3a2e;
+  --color-slate-300: #45564a;
+  --color-slate-400: #8fa392;
+  --color-slate-500: #a9bcab;
+  --color-slate-600: #c5d4c5;
+  --color-slate-700: #d9e4d7;
+  --color-slate-800: #eaf2e7;
+
+  /* rally green scale, inverted for dark */
+  --color-rally-50: #132018;
+  --color-rally-100: #1a2e20;
+  --color-rally-200: #29452f;
+  --color-rally-300: #315b3c;
+  --color-rally-400: #3f7a4c;
+  --color-rally-500: #4ade80;
+  --color-rally-600: #22c55e;
+  --color-rally-700: #86efac;
+  --color-rally-800: #b5f0c5;
+  --color-rally-900: #d7fbe0;
+
+  /* the accent */
+  --color-lime-pop: #bef264;
+  --color-lime-glow: #d9f99d;
+
+  --color-ink: #f0f6ec;
+}
+
+body {
+  background: var(--color-night);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* typing indicator dots */
+@keyframes bounceDot {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+.typingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: #bef264;
+  animation: bounceDot 1.2s infinite ease-in-out;
+}
+.typingDot:nth-child(2) { animation-delay: 0.15s; }
+.typingDot:nth-child(3) { animation-delay: 0.3s; }
+
+/* confirmation check draw */
+@keyframes drawCheck {
+  to { stroke-dashoffset: 0; }
+}
+.checkCircle {
+  stroke-dasharray: 290;
+  stroke-dashoffset: 290;
+  animation: drawCheck 0.6s ease-out forwards;
+}
+.checkMark {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: drawCheck 0.4s ease-out 0.5s forwards;
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.85); opacity: 0; }
+  60% { transform: scale(1.03); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.popIn { animation: popIn 0.35s ease-out both; }
+
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.slideUp { animation: slideUp 0.25s ease-out both; }
+
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1b241c 25%, #263127 50%, #1b241c 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes flashRow {
+  0% { background-color: #1a2e20; }
+  100% { background-color: transparent; }
+}
+.flashRow { animation: flashRow 2.5s ease-out both; }
