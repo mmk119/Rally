@@ -31,7 +31,8 @@ const tooltipStyle = {
 // so item and label colors are set explicitly.
 const tooltipItemStyle = { color: "#f5f7f4" };
 const tooltipLabelStyle = { color: "#9ba8a0", marginBottom: 2 };
-const axisTick = { fontSize: 11, fill: "#5f6b64" };
+// secondary rather than tertiary: axis labels are text and need to stay readable
+const axisTick = { fontSize: 11, fill: "#9ba8a0" };
 
 function ChartCard({ title, subtitle, children }) {
   return (

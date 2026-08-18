@@ -21,7 +21,10 @@ export function useCountUp(value, duration = 600) {
 
     const start = performance.now();
     const tick = (now) => {
-      const progress = Math.min((now - start) / duration, 1);
+      // rAF hands back the frame start time, which can precede `start`; without
+      // the lower clamp the easing curve goes negative and the number flashes
+      // below zero on the first frame.
+      const progress = Math.min(Math.max((now - start) / duration, 0), 1);
       setDisplay(value * easeOut(progress));
       if (progress < 1) frame.current = requestAnimationFrame(tick);
     };

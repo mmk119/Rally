@@ -17,7 +17,7 @@ function cellColor(ratio) {
 
 function shortHour(hour) {
   const h = hour % 12 === 0 ? 12 : hour % 12;
-  return `${h}${hour < 12 ? "a" : "p"}`;
+  return `${h}${hour < 12 ? "am" : "pm"}`;
 }
 
 export default function OccupancyHeatmap({ range }) {
@@ -37,7 +37,7 @@ export default function OccupancyHeatmap({ range }) {
             Occupancy heatmap
           </h3>
           <p className="text-xs text-faint">
-            Share of days booked, by court and hour, last {range} days
+            Share of days booked, by court and start time (8am to 10pm), last {range} days
           </p>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-faint">
@@ -53,14 +53,14 @@ export default function OccupancyHeatmap({ range }) {
 
       {/* narrow screens scroll the grid rather than squeezing or overflowing the page */}
       <div className="overflow-x-auto">
-        <div className="min-w-[520px]">
+        <div className="min-w-[640px]">
           <div
             className="grid gap-1"
             style={{ gridTemplateColumns: `64px repeat(${hours.length}, minmax(0, 1fr))` }}
           >
             <span />
             {hours.map((h) => (
-              <span key={h} className="pb-1 text-center text-[10px] font-medium text-faint">
+              <span key={h} className="pb-1 text-center text-[10px] font-medium text-muted">
                 {shortHour(h)}
               </span>
             ))}
