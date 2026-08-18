@@ -13,13 +13,28 @@ const responseSchema = {
     action: {
       type: "object",
       properties: {
-        type: { type: "string", enum: ["createBooking", "showAnalytics", "none"] },
-        date: { type: "string", description: "Booking date as YYYY-MM-DD, empty if not a booking" },
-        hour: { type: "integer", description: "Booking start hour 8 to 21 in 24h time, 0 if not a booking" },
+        type: {
+          type: "string",
+          enum: ["createBooking", "cancelBooking", "rescheduleBooking", "showAnalytics", "none"],
+        },
+        date: { type: "string", description: "Target date as YYYY-MM-DD, empty if not relevant" },
+        hour: { type: "integer", description: "Target start hour 8 to 21 in 24h time, 0 if not relevant" },
         court: { type: "string", enum: ["Court 1", "Court 2", "Court 3", "Court 4", "any"] },
+        ref: {
+          type: "string",
+          description: "Booking reference like RLY4321 when the user names one, otherwise empty",
+        },
+        newDate: {
+          type: "string",
+          description: "For rescheduleBooking only: the new date as YYYY-MM-DD, otherwise empty",
+        },
+        newHour: {
+          type: "integer",
+          description: "For rescheduleBooking only: the new start hour in 24h time, otherwise 0",
+        },
         metric: { type: "string", enum: ["bookings", "revenue", "occupancy", "peak", "none"] },
       },
-      required: ["type", "date", "hour", "court", "metric"],
+      required: ["type", "date", "hour", "court", "ref", "newDate", "newHour", "metric"],
       additionalProperties: false,
     },
     suggestions: {
@@ -32,7 +47,7 @@ const responseSchema = {
   additionalProperties: false,
 };
 
-function systemPrompt() {
+function systemPrompt(digest) {
   const today = new Date();
   return `You are Coach, the assistant embedded in Rally, a padel court booking website.
 
@@ -45,11 +60,17 @@ Facts about Rally:
 - Open daily, hourly slots from ${openHour}:00 to ${closeHour}:00 (last start ${closeHour - 1}:00).
 - The site has two tabs: Analytics (KPIs, charts, recent bookings) and Booking (slot picker).
 
+Current club numbers, all true as of now. Answer questions about performance using these figures rather than guessing, and quote them naturally in a sentence:
+${digest}
+
 Your job: understand the user's message and return a structured action.
 - If they want to book a court ("book a court friday at 3", "reserve tomorrow evening"), return action type createBooking with the resolved date (YYYY-MM-DD, never in the past), hour (24h integer within opening hours; interpret bare small numbers like "at 3" as afternoon, i.e. 15), and court ("any" unless they name one). Do NOT invent details they did not give, except resolving relative dates and am/pm.
-- If they ask how the club is doing ("how are bookings", "revenue this week", "busiest time"), return action type showAnalytics with the closest metric.
+- If they want to cancel ("cancel my Friday 3pm booking", "cancel RLY4321"), return action type cancelBooking with whatever they gave: ref if they named one, otherwise date, hour, and court. The app will confirm with them before anything is removed, so you never need to ask for confirmation yourself.
+- If they want to move a booking ("move my Friday booking to Saturday 5pm", "move it to 2pm"), return action type rescheduleBooking with whatever identifies the original (date, hour, ref) plus newDate and newHour.
+- For cancelling and moving, the app resolves which booking is meant. It matches on whatever you supply and falls back to the user's most recent booking when nothing identifies it, then confirms with them before changing anything. So when they say "my booking", "it", or "my reservation" without naming a date, time, court, or reference, still return the action and leave those fields empty. Never ask which court, which booking, or for confirmation — that is the app's job, and asking just adds a round trip.
+- If they ask how the club is doing ("how are bookings", "revenue this week", "busiest time"), return action type showAnalytics with the closest metric. For questions the metrics do not cover ("which court is underused?", "when are we quietest?"), answer from the numbers above with action type none.
 - Otherwise action type none. Answer questions about prices, hours, and courts yourself from the facts above.
-- If a message is ambiguous about the day or time for a booking, ask one clarifying question and use action type none.
+- If a message is ambiguous about the day or time, ask one clarifying question and use action type none. Never guess a date or time the user did not imply.
 Keep replies to one or two sentences; the app renders rich cards for you, so never repeat booking reference numbers or chart data in the text.`;
 }
 
@@ -65,7 +86,7 @@ export function coachConfirmation(courtName, dayLabel, hourLabel) {
   return `Booked! ${courtName}, ${dayLabel} ${hourLabel}. ${closer}`;
 }
 
-export async function askAssistant(history) {
+export async function askAssistant(history, digest = "") {
   if (!openaiKey) throw new Error("noApiKey");
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -81,7 +102,7 @@ export async function askAssistant(history) {
         json_schema: { name: "rallyAction", strict: true, schema: responseSchema },
       },
       messages: [
-        { role: "system", content: systemPrompt() },
+        { role: "system", content: systemPrompt(digest) },
         ...history.map((m) => ({
           role: m.role === "bot" ? "assistant" : "user",
           content: m.text,
@@ -141,7 +162,47 @@ function resolveCourt(text) {
 
 export function fallbackReply(text) {
   const lower = text.toLowerCase();
-  const none = { type: "none", date: "", hour: 0, court: "any", metric: "none" };
+  const none = { type: "none", date: "", hour: 0, court: "any", ref: "", newDate: "", newHour: 0, metric: "none" };
+
+  if (/\b(cancel|remove|delete|drop)\b/.test(lower)) {
+    const refMatch = lower.match(/rly\s*(\d{3,4})/i);
+    return {
+      reply: "Sure, let me pull that up.",
+      action: {
+        ...none,
+        type: "cancelBooking",
+        ref: refMatch ? `RLY${refMatch[1]}` : "",
+        date: resolveDay(lower) || "",
+        hour: resolveHour(lower.replace(/court\s*[1-4]/g, "")) || 0,
+        court: resolveCourt(lower),
+      },
+      suggestions: ["How are bookings this week?"],
+    };
+  }
+
+  if (/\b(move|reschedule|change)\b/.test(lower)) {
+    // parse only the destination; the app resolves which booking is being moved
+    const target = lower.split(/\bto\b/).pop() || lower;
+    const newDate = resolveDay(target);
+    const newHour = resolveHour(target.replace(/court\s*[1-4]/g, ""));
+    if (newHour) {
+      return {
+        reply: "On it.",
+        action: {
+          ...none,
+          type: "rescheduleBooking",
+          newDate: newDate || toDateStr(new Date()),
+          newHour,
+        },
+        suggestions: ["How are bookings this week?"],
+      };
+    }
+    return {
+      reply: "Happy to move it. What day and time should it move to?",
+      action: none,
+      suggestions: ["Move it to tomorrow at 6pm"],
+    };
+  }
 
   if (/\b(book|reserve|reservation|booking)\b/.test(lower)) {
     const date = resolveDay(lower);
@@ -150,7 +211,7 @@ export function fallbackReply(text) {
       return {
         // the widget replaces this with a Coach style confirmation once the slot resolves
         reply: "On it, locking that in for you.",
-        action: { type: "createBooking", date, hour, court: resolveCourt(lower), metric: "none" },
+        action: { ...none, type: "createBooking", date, hour, court: resolveCourt(lower) },
         suggestions: ["How are bookings this week?", "Show revenue"],
       };
     }

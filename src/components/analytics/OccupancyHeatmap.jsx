@@ -21,7 +21,7 @@ function shortHour(hour) {
 }
 
 export default function OccupancyHeatmap({ range }) {
-  const { isSlotTaken, demoMode } = useApp();
+  const { isSlotTaken, demoMode, heatmapFocus } = useApp();
 
   const { hours, rows } = useMemo(
     () => getHeatmap(range, isSlotTaken),
@@ -60,13 +60,18 @@ export default function OccupancyHeatmap({ range }) {
           >
             <span />
             {hours.map((h) => (
-              <span key={h} className="pb-1 text-center text-[10px] font-medium text-muted">
+              <span
+                key={h}
+                className={`pb-1 text-center text-[10px] font-medium transition-colors duration-150 ${
+                  heatmapFocus === h ? "font-bold text-lime-pop" : "text-muted"
+                }`}
+              >
                 {shortHour(h)}
               </span>
             ))}
 
             {rows.map((row) => (
-              <Row key={row.court} row={row} />
+              <Row key={row.court} row={row} focusHour={heatmapFocus} />
             ))}
           </div>
         </div>
@@ -75,7 +80,7 @@ export default function OccupancyHeatmap({ range }) {
   );
 }
 
-function Row({ row }) {
+function Row({ row, focusHour }) {
   return (
     <>
       <span className="flex items-center pr-2 text-xs font-semibold text-muted">{row.court}</span>
@@ -83,7 +88,9 @@ function Row({ row }) {
         <div
           key={cell.hour}
           title={`${row.court} · ${shortHour(cell.hour)} · ${Math.round(cell.ratio * 100)}% booked`}
-          className="group relative h-7 rounded-[4px] transition-transform duration-150 hover:scale-[1.12]"
+          className={`group relative h-7 rounded-[4px] transition-all duration-150 hover:scale-[1.12] ${
+            focusHour === cell.hour ? "ring-2 ring-lime-pop ring-offset-2 ring-offset-card" : ""
+          } ${focusHour != null && focusHour !== cell.hour ? "opacity-40" : ""}`}
           style={{ background: cellColor(cell.ratio) }}
         >
           <span className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-control border border-hairline bg-raised px-2 py-1 text-[11px] text-ink shadow-lg group-hover:block">

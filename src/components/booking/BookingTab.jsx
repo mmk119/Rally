@@ -64,7 +64,7 @@ function SuccessScreen({ booking, onDone }) {
 }
 
 export default function BookingTab() {
-  const { isSlotTaken, addBooking, userBookings } = useApp();
+  const { isSlotTaken, addBooking, cancelBooking, activeUserBookings } = useApp();
   const [step, setStep] = useState(0);
   const [date, setDate] = useState(null);
   const [hour, setHour] = useState(null);
@@ -374,25 +374,39 @@ export default function BookingTab() {
         )}
       </div>
 
-      {userBookings.length > 0 && (
+      {activeUserBookings.length > 0 && (
         <div className="rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20">
-          <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide">Your upcoming bookings</h3>
+          <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-ink">
+            Your upcoming bookings
+          </h3>
           <div className="space-y-2">
-            {userBookings.map((b) => (
-              <div key={b.ref} className="flex items-center justify-between rounded-control bg-rally-50/60 px-4 py-3 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono text-xs font-bold text-rally-700">{b.ref}</span>
-                  <span className="font-semibold">{b.court}</span>
+            {activeUserBookings.map((b) => (
+              <div
+                key={b.ref}
+                className="group flex flex-wrap items-center justify-between gap-2 rounded-control bg-rally-50/60 px-4 py-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="tabularNums font-mono text-xs font-bold text-rally-700">{b.ref}</span>
+                  <span className="font-semibold text-ink">{b.court}</span>
                   <span className="text-muted">
                     {formatDate(b.date)} · {formatHour(b.hour)}
                   </span>
                 </div>
-                <span className="flex items-center gap-2 text-xs font-semibold text-rally-700">
+                <div className="flex items-center gap-2">
                   {b.source === "chat" && (
-                    <span className="rounded-full bg-rally-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">via chat</span>
+                    <span className="rounded-full bg-rally-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rally-800">
+                      via chat
+                    </span>
                   )}
-                  Confirmed
-                </span>
+                  <span className="text-xs font-semibold text-ok">Confirmed</span>
+                  <button
+                    onClick={() => cancelBooking(b)}
+                    aria-label={`Cancel booking ${b.ref}`}
+                    className="rounded-full px-2 py-0.5 text-xs font-semibold text-faint transition duration-150 hover:bg-bad/12 hover:text-bad sm:opacity-0 sm:focus-visible:opacity-100 sm:group-hover:opacity-100"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ))}
           </div>

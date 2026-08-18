@@ -3,6 +3,7 @@ import TopBar from "./components/TopBar";
 import AnalyticsTab from "./components/analytics/AnalyticsTab";
 import BookingTab from "./components/booking/BookingTab";
 import ChatWidget from "./components/chat/ChatWidget";
+import UndoToast from "./components/UndoToast";
 
 export default function App() {
   const { activeTab } = useApp();
@@ -13,6 +14,7 @@ export default function App() {
         {activeTab === "analytics" ? <AnalyticsTab /> : <BookingTab />}
       </main>
       <ChatWidget />
+      <UndoToast />
     </div>
   );
 }

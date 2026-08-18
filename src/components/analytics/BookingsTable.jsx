@@ -45,7 +45,7 @@ const columns = [
 ];
 
 export default function BookingsTable({ rangeKey }) {
-  const { allRows, lastBookingRef } = useApp();
+  const { allRows, lastBookingRef, cancelBooking } = useApp();
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -201,19 +201,31 @@ export default function BookingsTable({ rangeKey }) {
               rows.map((r) => (
                 <tr
                   key={r.ref + r.createdAt}
-                  className={`transition-colors duration-150 hover:bg-raised ${
+                  className={`group transition-colors duration-150 hover:bg-raised ${
                     r.ref === lastBookingRef ? "flashRow" : ""
-                  }`}
+                  } ${r.status === "Cancelled" ? "opacity-60" : ""}`}
                 >
                   <td className="tabularNums px-4 py-3 font-mono text-xs font-semibold text-faint">{r.ref}</td>
                   <td className="px-4 py-3 font-medium text-ink">{r.customer}</td>
                   <td className="px-4 py-3 text-slate-600">{r.court}</td>
-                  <td className="px-4 py-3 text-muted">
+                  <td className={`px-4 py-3 text-muted ${r.status === "Cancelled" ? "line-through" : ""}`}>
                     {formatDate(r.date)} · {formatHour(r.hour)}
                   </td>
                   <td className="tabularNums px-4 py-3 font-medium text-ink">${r.price}</td>
                   <td className="px-4 py-3">
-                    <StatusPill status={r.status} />
+                    <div className="flex items-center justify-between gap-2">
+                      <StatusPill status={r.status} />
+                      {r.status !== "Cancelled" && (
+                        // revealed on row hover or keyboard focus, so the table stays calm
+                        <button
+                          onClick={() => cancelBooking(r)}
+                          aria-label={`Cancel booking ${r.ref}`}
+                          className="rounded-full px-2 py-0.5 text-xs font-semibold text-faint opacity-0 transition duration-150 hover:bg-bad/12 hover:text-bad focus-visible:opacity-100 group-hover:opacity-100"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))

@@ -42,10 +42,10 @@ function DemoToggle() {
 }
 
 export default function TopBar() {
-  const { activeTab, setActiveTab, userBookings } = useApp();
+  const { activeTab, setActiveTab, activeUserBookings } = useApp();
   const tabs = [
     { id: "analytics", label: "Analytics" },
-    { id: "booking", label: "Booking", badge: userBookings.length || null },
+    { id: "booking", label: "Booking", badge: activeUserBookings.length || null },
   ];
 
   return (

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { generateHistory } from "../../data/mockData";
+import { useApp } from "../../store";
 import KpiCards from "./KpiCards";
 import ChartsPanel from "./ChartsPanel";
 import OccupancyHeatmap from "./OccupancyHeatmap";
@@ -7,7 +8,10 @@ import BookingsTable from "./BookingsTable";
 
 export default function AnalyticsTab() {
   const [range, setRange] = useState(7);
-  const history = useMemo(() => generateHistory(60), []);
+  const { isSlotTaken } = useApp();
+  // same predicate the heatmap and slot picker use, so bookings and
+  // cancellations move the KPIs and charts too
+  const history = useMemo(() => generateHistory(60, isSlotTaken), [isSlotTaken]);
   const visible = useMemo(() => history.slice(-range), [history, range]);
   const previous = useMemo(() => history.slice(-range * 2, -range), [history, range]);
 

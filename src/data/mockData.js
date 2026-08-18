@@ -59,8 +59,16 @@ function refFrom(n) {
   return `RLY${String(3200 + n)}`;
 }
 
-// Daily totals for the last N days, used by KPI cards and the trend chart.
-export function generateHistory(days) {
+/**
+ * Daily totals for the last N days, used by KPI cards and the trend chart.
+ *
+ * Takes the same occupancy predicate the heatmap and slot picker use, so every
+ * surface reads one source of truth: a booking made in chat raises the KPIs,
+ * and a cancellation lowers them. Falls back to the seeded baseline when no
+ * predicate is supplied.
+ */
+export function generateHistory(days, isSlotTaken) {
+  const taken = isSlotTaken || isSlotPreBooked;
   const out = [];
   const today = new Date();
   for (let i = days - 1; i >= 0; i--) {
@@ -73,7 +81,7 @@ export function generateHistory(days) {
     for (const c of courts) {
       let count = 0;
       for (let h = openHour; h < closeHour; h++) {
-        if (isSlotPreBooked(ds, h, c.id)) count++;
+        if (taken(ds, h, c.id)) count++;
       }
       perCourt[c.name] = count;
       bookings += count;
@@ -99,6 +107,7 @@ export function generateRecentBookings() {
       ref: refFrom(i * 7 + (hash(`ref${i}`) % 6)),
       customer: `${firstNames[hash(`fn${i}`) % firstNames.length]} ${lastNames[hash(`ln${i}`) % lastNames.length]}`,
       court: court.name,
+      courtId: court.id, // needed so any row can be cancelled and free its slot
       date: ds,
       hour,
       price: court.price,
@@ -176,6 +185,57 @@ export function getBusiestSlot(days = 30, isSlotTaken) {
     hourLabel: formatHour(best.hour),
     occupancyPct: Math.round(best.rate * 100),
   };
+}
+
+/**
+ * A compact, truthful snapshot of the club, injected into the assistant's
+ * system prompt so it can answer long tail questions ("which court is
+ * underused?", "when are we quietest?") from real numbers instead of guessing.
+ */
+export function getClubDigest(isSlotTaken) {
+  const taken = isSlotTaken || isSlotPreBooked;
+  const history = generateHistory(14, taken);
+  const week = history.slice(-7);
+  const prev = history.slice(0, 7);
+  const sum = (rows, k) => rows.reduce((a, r) => a + r[k], 0);
+
+  const bookings = sum(week, "bookings");
+  const prevBookings = sum(prev, "bookings") || 1;
+  const revenue = sum(week, "revenue");
+  const slots = 7 * courts.length * (closeHour - openHour);
+
+  const perCourt = {};
+  for (const day of week) {
+    for (const [name, count] of Object.entries(day.perCourt)) {
+      perCourt[name] = (perCourt[name] || 0) + count;
+    }
+  }
+  const ranked = Object.entries(perCourt).sort((a, b) => b[1] - a[1]);
+
+  // occupancy by hour across the week, for busiest and quietest
+  const byHour = [];
+  for (let h = openHour; h < closeHour; h++) {
+    let count = 0;
+    for (const day of week) for (const c of courts) if (taken(day.date, h, c.id)) count++;
+    byHour.push({ hour: h, rate: count / (7 * courts.length) });
+  }
+  const sortedHours = [...byHour].sort((a, b) => b.rate - a.rate);
+  const busiest = getBusiestSlot(30, taken);
+
+  return [
+    `Bookings last 7 days: ${bookings} (previous 7 days: ${sum(prev, "bookings")}, change ${(((bookings - prevBookings) / prevBookings) * 100).toFixed(1)}%).`,
+    `Revenue last 7 days: $${revenue.toLocaleString()}.`,
+    `Occupancy last 7 days: ${Math.round((bookings / slots) * 100)}% of all court hours.`,
+    `Bookings per court last 7 days: ${ranked.map(([n, v]) => `${n} ${v}`).join(", ")}.`,
+    `Most used court: ${ranked[0][0]}. Least used court: ${ranked[ranked.length - 1][0]}.`,
+    `Busiest hours: ${sortedHours.slice(0, 3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
+    `Quietest hours: ${sortedHours.slice(-3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
+    busiest
+      ? `Busiest weekday and hour overall: ${busiest.weekdayName} at ${busiest.hourLabel} (${busiest.occupancyPct}% full).`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 /**

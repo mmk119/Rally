@@ -1,5 +1,6 @@
 import { useMemo } from "react";
-import { courts, openHour, closeHour, isSlotPreBooked, formatHour } from "../../data/mockData";
+import { courts, openHour, closeHour, formatHour } from "../../data/mockData";
+import { useApp } from "../../store";
 import { useCountUp } from "../../lib/useCountUp";
 
 function Trend({ delta }) {
@@ -32,6 +33,8 @@ function Card({ label, value, delta, hint }) {
 }
 
 export default function KpiCards({ visible, previous }) {
+  const { isSlotTaken } = useApp();
+
   const stats = useMemo(() => {
     const sum = (rows, key) => rows.reduce((a, r) => a + r[key], 0);
     const bookings = sum(visible, "bookings");
@@ -48,7 +51,7 @@ export default function KpiCards({ visible, previous }) {
     for (const day of visible) {
       for (let h = openHour; h < closeHour; h++) {
         for (const c of courts) {
-          if (isSlotPreBooked(day.date, h, c.id)) byHour[h] = (byHour[h] || 0) + 1;
+          if (isSlotTaken(day.date, h, c.id)) byHour[h] = (byHour[h] || 0) + 1;
         }
       }
     }
@@ -58,7 +61,7 @@ export default function KpiCards({ visible, previous }) {
     let prevPeakCount = 0;
     for (const day of previous) {
       for (const c of courts) {
-        if (isSlotPreBooked(day.date, Number(peak), c.id)) prevPeakCount++;
+        if (isSlotTaken(day.date, Number(peak), c.id)) prevPeakCount++;
       }
     }
     const peakCount = byHour[peak] || 0;
@@ -75,7 +78,7 @@ export default function KpiCards({ visible, previous }) {
       occupancyDelta: occupancy - prevOccupancy,
       peak: Number(peak),
     };
-  }, [visible, previous]);
+  }, [visible, previous, isSlotTaken]);
 
   // numbers tick up on mount and whenever the range control changes
   const bookingsUp = useCountUp(stats.bookings);

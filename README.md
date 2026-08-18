@@ -14,14 +14,26 @@ Optionally copy `.env.example` to `.env` and add an OpenAI API key so the chat b
 ## What is inside
 
 - **Analytics tab** — four KPI cards whose numbers count up on load, an area chart plus a donut chart, an **occupancy heatmap** showing demand by court and hour, and a sortable recent bookings table with status pills, a loading skeleton, an empty state, and an error state with retry. A 7/30 day range control drives all of them.
-- **Booking tab** — a four step flow: pick a day and hourly slot (available vs full states), choose a court, add details, confirm. Confirmation shows a booking reference with an animated check.
-- **Coach, the AI assistant** — floating chat available on both tabs, with a typing indicator, quick reply chips, and rich replies (booking confirmation cards and KPI snippet cards with a sparkline). It completes bookings from free form messages like "book a court Friday at 3", and the Booking tab plus the analytics table reflect the result immediately, with the new row flashing as it lands. The first time you open it in a session Coach **volunteers one insight computed from the booking data** — the busiest weekday and hour, and how full it runs — rather than a canned line.
+- **Booking tab** — a four step flow: pick a day and hourly slot (available vs full states), choose a court, add details, confirm. Confirmation shows a booking reference with an animated check. Your bookings are listed below with a **cancel** action.
+
+- **Cancelling** — any booking can be cancelled from the table row or the Booking tab, and every surface agrees instantly: the row restyles to a muted Cancelled pill with a struck through time, the slot frees up in the picker and heatmap, and the KPI cards and charts drop by exactly that booking. Cancels are reversible from an **undo toast** rather than gated behind a confirm dialog.
+- **Coach, the AI assistant** — floating chat available on both tabs, with a typing indicator, quick reply chips, and rich replies (booking, cancellation, reschedule, and KPI snippet cards). Coach can:
+  - **book** from free form messages like "book a court Friday at 3", with the new row flashing as it lands in the table;
+  - **cancel**, always behind a confirmation card, and disambiguate by listing candidates when several bookings match;
+  - **reschedule**, showing a before and after card;
+  - **answer analytics questions from real numbers** — a live club digest travels with every request, so questions the KPI cards do not cover ("which court is underused?", "when are we quietest?") get truthful answers;
+  - **highlight the heatmap**, dimming everything except the hour it is talking about;
+  - **refuse impossible slots** gracefully, asking for a workable time instead of failing.
+
+  The first time you open it in a session Coach **volunteers one insight computed from the booking data** — the busiest weekday and hour, and how full it runs — rather than a canned line, with a pulse on the launcher inviting the click.
 
 - **Demo mode** — a subtle "Demo data" toggle in the top bar preloads a full day of bookings so the analytics, heatmap, and table look busy instantly for a live walkthrough. Toggling it off restores the default seeded data.
 
 ## How the bot works
 
-The bot sends the conversation to the OpenAI API (`gpt-4o-mini`) with a strict JSON schema, and receives back the reply text plus an action (`createBooking`, `showAnalytics`, or `none`). The app executes that action against the shared mock store, so both tabs stay in sync with the chat: a booking made from the chat appears immediately in the Booking tab and the recent bookings table. If the API call fails or no key is set, a keyword parser produces the same action shape so the demo never breaks. The chat header shows which mode is active.
+The bot sends the conversation to the OpenAI API (`gpt-4o-mini`) with a strict JSON schema, plus a live digest of the club's real numbers, and receives back the reply text plus an action (`createBooking`, `cancelBooking`, `rescheduleBooking`, `showAnalytics`, or `none`). The app executes that action against the shared mock store, so every surface stays in sync with the chat. Destructive actions are always confirmed in the UI before anything is removed, and the app validates the model's slot before acting, so an out of hours or past date becomes a question rather than a bad booking. If the API call fails or no key is set, a keyword parser produces the same action shape so the demo never breaks. The chat header shows which mode is active.
+
+**One source of truth.** The slot picker, heatmap, KPI cards, charts, and bookings table all read the same occupancy predicate in `store.jsx`. That is why a booking or a cancellation moves every number on screen at once instead of only the table.
 
 ## Seeing the states
 
