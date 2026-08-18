@@ -14,7 +14,9 @@ import {
 } from "recharts";
 import { courts } from "../../data/mockData";
 
-const pieColors = ["#bef264", "#86efac", "#4ade80", "#22c55e"];
+// Four steps with a clear lightness progression so slices stay distinguishable
+// on the dark card without relying on hue alone.
+const pieColors = ["#bef264", "#86efac", "#34d399", "#16a34a"];
 const tooltipStyle = {
   borderRadius: 12,
   border: "1px solid #2b3a2e",
@@ -22,6 +24,10 @@ const tooltipStyle = {
   color: "#f0f6ec",
   fontSize: 12,
 };
+// Recharts defaults tooltip rows to black, which is unreadable on the dark card,
+// so item and label colors are set explicitly.
+const tooltipItemStyle = { color: "#f0f6ec" };
+const tooltipLabelStyle = { color: "#a9bcab", marginBottom: 2 };
 
 function ChartCard({ title, subtitle, children }) {
   return (
@@ -76,6 +82,9 @@ export default function ChartsPanel({ visible, range }) {
                 <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
+                  cursor={{ stroke: "#45564a", strokeWidth: 1 }}
                   formatter={(v, name) => (name === "revenue" ? [`$${v}`, "Revenue"] : [v, "Bookings"])}
                 />
                 <Area type="monotone" dataKey="bookings" stroke="#bef264" strokeWidth={2.5} fill="url(#rallyFill)" />
@@ -103,8 +112,19 @@ export default function ChartsPanel({ visible, range }) {
                     <Cell key={entry.name} fill={pieColors[i % pieColors.length]} />
                   ))}
                 </Pie>
-                <Tooltip contentStyle={tooltipStyle} formatter={(v, name) => [`${v} bookings`, name]} />
-                <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, color: "#a9bcab" }} />
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  itemStyle={tooltipItemStyle}
+                  labelStyle={tooltipLabelStyle}
+                  formatter={(v, name) => [`${v} bookings`, name]}
+                />
+                <Legend
+                  iconType="circle"
+                  iconSize={8}
+                  wrapperStyle={{ fontSize: 12 }}
+                  // label text keeps one readable color; the dot carries the series color
+                  formatter={(value) => <span style={{ color: "#a9bcab" }}>{value}</span>}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
