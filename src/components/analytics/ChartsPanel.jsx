@@ -68,7 +68,8 @@ export default function ChartsPanel({ visible, range }) {
         <ChartCard title="Bookings over time" subtitle={`Daily bookings, last ${range} days`}>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trendData} margin={{ top: 4, right: 8, left: -18, bottom: 0 }}>
+              {/* no negative left margin: it clipped the y axis labels down to their last digit */}
+              <AreaChart data={trendData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="rallyFill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#bef264" stopOpacity={0.3} />
@@ -84,7 +85,7 @@ export default function ChartsPanel({ visible, range }) {
                   interval="preserveStartEnd"
                   minTickGap={24}
                 />
-                <YAxis tick={axisTick} tickLine={false} axisLine={false} width={32} />
+                <YAxis tick={axisTick} tickLine={false} axisLine={false} width={40} />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   itemStyle={tooltipItemStyle}
