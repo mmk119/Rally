@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { generateHistory } from "../../data/mockData";
 import KpiCards from "./KpiCards";
 import ChartsPanel from "./ChartsPanel";
+import OccupancyHeatmap from "./OccupancyHeatmap";
 import BookingsTable from "./BookingsTable";
 
 export default function AnalyticsTab() {
@@ -12,18 +13,27 @@ export default function AnalyticsTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wide">Club analytics</h1>
-          <p className="text-sm text-slate-500">How Rally is performing, at a glance.</p>
+          <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-ink">
+            Club analytics
+          </h1>
+          <p className="mt-0.5 text-sm text-muted">How Rally is performing, at a glance.</p>
         </div>
-        <div className="flex rounded-full bg-slate-100 p-1 text-sm font-semibold">
+        <div
+          role="group"
+          aria-label="Date range"
+          className="flex rounded-full border border-hairline bg-card p-1 text-sm font-semibold"
+        >
           {[7, 30].map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
-              className={`rounded-full px-4 py-1.5 transition-colors ${
-                range === r ? "bg-card text-rally-800 shadow-sm" : "text-slate-500 hover:text-slate-800"
+              aria-pressed={range === r}
+              className={`rounded-full px-4 py-1.5 transition-colors duration-150 ${
+                range === r
+                  ? "bg-raised text-ink"
+                  : "text-faint hover:text-muted"
               }`}
             >
               Last {r} days
@@ -34,6 +44,7 @@ export default function AnalyticsTab() {
 
       <KpiCards visible={visible} previous={previous} />
       <ChartsPanel visible={visible} range={range} />
+      <OccupancyHeatmap range={range} />
       <BookingsTable rangeKey={range} />
     </div>
   );

@@ -112,3 +112,102 @@ export function generateRecentBookings() {
 export function newBookingRef() {
   return `RLY${Math.floor(4000 + Math.random() * 5000)}`;
 }
+
+const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/**
+ * Occupancy per court per hour across a window of days, as a 0..1 ratio.
+ * Rows are courts, columns are hours, which is exactly what the heatmap draws.
+ */
+export function getHeatmap(days, isSlotTaken) {
+  const history = generateHistory(days);
+  const taken = isSlotTaken || ((d, h, c) => isSlotPreBooked(d, h, c));
+  const hours = [];
+  for (let h = openHour; h < closeHour; h++) hours.push(h);
+
+  const rows = courts.map((court) => ({
+    court: court.name,
+    cells: hours.map((hour) => {
+      let count = 0;
+      for (const day of history) if (taken(day.date, hour, court.id)) count++;
+      return { hour, ratio: history.length ? count / history.length : 0, count };
+    }),
+  }));
+
+  return { hours, rows, days: history.length };
+}
+
+/**
+ * The single busiest weekday-and-hour pairing over the given window.
+ * Used by the assistant to open with a real insight rather than a canned line.
+ */
+export function getBusiestSlot(days = 30, isSlotTaken) {
+  const history = generateHistory(days);
+  const taken = isSlotTaken || ((d, h, c) => isSlotPreBooked(d, h, c));
+  const buckets = new Map(); // "weekday|hour" -> { count, samples }
+
+  for (const day of history) {
+    const weekday = new Date(day.date + "T00:00:00").getDay();
+    for (let hour = openHour; hour < closeHour; hour++) {
+      const key = `${weekday}|${hour}`;
+      const entry = buckets.get(key) || { count: 0, samples: 0 };
+      for (const c of courts) {
+        entry.samples++;
+        if (taken(day.date, hour, c.id)) entry.count++;
+      }
+      buckets.set(key, entry);
+    }
+  }
+
+  let best = null;
+  for (const [key, entry] of buckets) {
+    const [weekday, hour] = key.split("|").map(Number);
+    const rate = entry.samples ? entry.count / entry.samples : 0;
+    if (!best || rate > best.rate) {
+      best = { weekday, hour, rate, count: entry.count };
+    }
+  }
+  if (!best) return null;
+
+  return {
+    weekday: best.weekday,
+    weekdayName: weekdayNames[best.weekday],
+    hour: best.hour,
+    hourLabel: formatHour(best.hour),
+    occupancyPct: Math.round(best.rate * 100),
+  };
+}
+
+/**
+ * A realistic busy day used by the demo toggle, so a live walkthrough opens on
+ * full looking analytics. Deterministic, and dated today so it lands at the top
+ * of the recent bookings table.
+ */
+export function generateDemoBookings() {
+  const rows = [];
+  const today = new Date();
+  const ds = toDateStr(today);
+  const statuses = ["Confirmed", "Confirmed", "Confirmed", "Pending"];
+  let n = 0;
+  for (let hour = openHour; hour < closeHour; hour++) {
+    for (const court of courts) {
+      // busier in the evening, same shape as the seeded availability
+      const bias = hour >= 17 ? 78 : hour >= 12 ? 46 : 26;
+      if (hash(`demo${hour}${court.id}`) % 100 >= bias) continue;
+      rows.push({
+        ref: `RLY${7000 + n}`,
+        customer: `${firstNames[hash(`dfn${n}`) % firstNames.length]} ${lastNames[hash(`dln${n}`) % lastNames.length]}`,
+        court: court.name,
+        courtId: court.id,
+        date: ds,
+        hour,
+        price: court.price,
+        status: statuses[hash(`dst${n}`) % statuses.length],
+        source: "demo",
+        createdAt: today.getTime() - n * 60_000,
+      });
+      n++;
+    }
+  }
+  return rows.sort((a, b) => b.createdAt - a.createdAt);
+}

@@ -34,7 +34,9 @@ const responseSchema = {
 
 function systemPrompt() {
   const today = new Date();
-  return `You are the Rally assistant, embedded in Rally, a padel court booking website. Be warm, brief, and helpful.
+  return `You are Coach, the assistant embedded in Rally, a padel court booking website.
+
+Voice: warm, encouraging, and lightly padel-flavoured, but professional and concise. One short personable line, never a paragraph. A confirmation should read like "Booked! Court 3, Friday 3 PM. Bring your A-game." Use a light touch: an occasional nod to the game is good, constant puns are not. Never use exclamation marks more than once in a reply.
 
 Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${toDateStr(today)}).
 
@@ -49,6 +51,18 @@ Your job: understand the user's message and return a structured action.
 - Otherwise action type none. Answer questions about prices, hours, and courts yourself from the facts above.
 - If a message is ambiguous about the day or time for a booking, ask one clarifying question and use action type none.
 Keep replies to one or two sentences; the app renders rich cards for you, so never repeat booking reference numbers or chart data in the text.`;
+}
+
+/** Court and time are filled in by the caller once the slot is actually resolved. */
+export function coachConfirmation(courtName, dayLabel, hourLabel) {
+  const closers = [
+    "Bring your A-game.",
+    "Go get it.",
+    "Enjoy the run.",
+    "Have a good hit.",
+  ];
+  const closer = closers[Math.floor(Math.random() * closers.length)];
+  return `Booked! ${courtName}, ${dayLabel} ${hourLabel}. ${closer}`;
 }
 
 export async function askAssistant(history) {
@@ -134,29 +148,30 @@ export function fallbackReply(text) {
     const hour = resolveHour(lower.replace(/court\s*[1-4]/g, ""));
     if (date && hour) {
       return {
-        reply: "You got it, let me set that up.",
+        // the widget replaces this with a Coach style confirmation once the slot resolves
+        reply: "On it, locking that in for you.",
         action: { type: "createBooking", date, hour, court: resolveCourt(lower), metric: "none" },
         suggestions: ["How are bookings this week?", "Show revenue"],
       };
     }
     return {
-      reply: "Happy to book that! Which day and time would you like? For example: book a court Friday at 3pm.",
+      reply: "Happy to get you on court. Which day and time suits? For example: Friday at 3pm.",
       action: none,
       suggestions: ["Book a court tomorrow at 6pm", "Book Court 4 Friday at 3pm"],
     };
   }
 
   if (/\b(revenue|earning|income)\b/.test(lower)) {
-    return { reply: "Here is how revenue is looking.", action: { ...none, type: "showAnalytics", metric: "revenue" }, suggestions: ["Show occupancy", "Book a court tomorrow at 6pm"] };
+    return { reply: "Here is how the takings are shaping up.", action: { ...none, type: "showAnalytics", metric: "revenue" }, suggestions: ["Show occupancy", "Book a court tomorrow at 6pm"] };
   }
   if (/\b(occupancy|utilization|full)\b/.test(lower)) {
-    return { reply: "Here is the current occupancy picture.", action: { ...none, type: "showAnalytics", metric: "occupancy" }, suggestions: ["Show revenue", "Book a court Friday at 3pm"] };
+    return { reply: "Here is how full the courts are running.", action: { ...none, type: "showAnalytics", metric: "occupancy" }, suggestions: ["Show revenue", "Book a court Friday at 3pm"] };
   }
   if (/\b(busy|busiest|peak)\b/.test(lower)) {
-    return { reply: "Evenings are our rush hour, here are the numbers.", action: { ...none, type: "showAnalytics", metric: "peak" }, suggestions: ["How are bookings this week?", "Book a court tonight at 8pm"] };
+    return { reply: "Evenings are your rush hour. Here are the numbers.", action: { ...none, type: "showAnalytics", metric: "peak" }, suggestions: ["How are bookings this week?", "Book a court tonight at 8pm"] };
   }
   if (/\b(bookings|doing|stats|analytics|performance)\b/.test(lower)) {
-    return { reply: "Here is a quick pulse on bookings.", action: { ...none, type: "showAnalytics", metric: "bookings" }, suggestions: ["Show revenue", "Book a court tomorrow at 6pm"] };
+    return { reply: "Here is a quick pulse on the club.", action: { ...none, type: "showAnalytics", metric: "bookings" }, suggestions: ["Show revenue", "Book a court tomorrow at 6pm"] };
   }
   if (/\b(price|cost|how much|rate)\b/.test(lower)) {
     return {
@@ -166,13 +181,13 @@ export function fallbackReply(text) {
     };
   }
   if (/\b(hour|open|close|when)\b/.test(lower)) {
-    return { reply: `We are open daily from ${openHour}:00 to ${closeHour}:00, with hourly slots.`, action: none, suggestions: ["Book a court tomorrow at 6pm"] };
+    return { reply: `Courts are open daily from ${openHour}:00 to ${closeHour}:00, in one hour slots.`, action: none, suggestions: ["Book a court tomorrow at 6pm"] };
   }
   if (/\b(hi|hello|hey)\b/.test(lower)) {
-    return { reply: "Hey! I can book you a court or pull up club analytics. What would you like?", action: none, suggestions: ["Book a court Friday at 3pm", "How are bookings this week?"] };
+    return { reply: "Hey, Coach here. I can get you on court or pull up the club numbers.", action: none, suggestions: ["Book a court Friday at 3pm", "How are bookings this week?"] };
   }
   return {
-    reply: "I can book courts and answer questions about how Rally is doing. Try: book a court Friday at 3pm.",
+    reply: "I can book courts and read the club numbers. Try: book a court Friday at 3pm.",
     action: none,
     suggestions: ["Book a court Friday at 3pm", "How are bookings this week?", "Show revenue"],
   };

@@ -1,15 +1,16 @@
 import { useMemo } from "react";
 import { courts, openHour, closeHour, isSlotPreBooked, formatHour } from "../../data/mockData";
+import { useCountUp } from "../../lib/useCountUp";
 
 function Trend({ delta }) {
   const up = delta >= 0;
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold ${
-        up ? "bg-rally-100 text-rally-800" : "bg-red-400/15 text-red-300"
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        up ? "bg-ok/12 text-ok" : "bg-bad/12 text-bad"
       }`}
     >
-      <svg viewBox="0 0 12 12" className={`h-3 w-3 ${up ? "" : "rotate-180"}`} fill="currentColor">
+      <svg viewBox="0 0 12 12" className={`h-2.5 w-2.5 ${up ? "" : "rotate-180"}`} fill="currentColor">
         <path d="M6 2l4 5H2l4-5z" />
       </svg>
       {Math.abs(delta).toFixed(1)}%
@@ -19,13 +20,13 @@ function Trend({ delta }) {
 
 function Card({ label, value, delta, hint }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-card p-5 shadow-sm">
-      <p className="text-sm font-medium text-slate-500">{label}</p>
+    <div className="group rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20 transition-colors duration-150 hover:border-slate-300">
+      <p className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</p>
       <div className="mt-2 flex items-baseline justify-between gap-2">
-        <span className="font-display text-2xl font-bold tracking-tight">{value}</span>
+        <span className="tabularNums font-display text-3xl font-bold leading-none text-ink">{value}</span>
         {delta !== null && <Trend delta={delta} />}
       </div>
-      <p className="mt-1 text-xs text-slate-400">{hint}</p>
+      <p className="mt-2 text-xs text-muted">{hint}</p>
     </div>
   );
 }
@@ -76,16 +77,37 @@ export default function KpiCards({ visible, previous }) {
     };
   }, [visible, previous]);
 
+  // numbers tick up on mount and whenever the range control changes
+  const bookingsUp = useCountUp(stats.bookings);
+  const revenueUp = useCountUp(stats.revenue);
+  const occupancyUp = useCountUp(stats.occupancy);
+  const peakCountUp = useCountUp(stats.peakCount);
+
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      <Card label="Bookings" value={stats.bookings.toLocaleString()} delta={stats.bookingsDelta} hint="vs previous period" />
-      <Card label="Revenue" value={`$${stats.revenue.toLocaleString()}`} delta={stats.revenueDelta} hint="vs previous period" />
-      <Card label="Occupancy" value={`${stats.occupancy.toFixed(0)}%`} delta={stats.occupancyDelta} hint="of all court hours" />
+      <Card
+        label="Bookings"
+        value={Math.round(bookingsUp).toLocaleString()}
+        delta={stats.bookingsDelta}
+        hint="vs previous period"
+      />
+      <Card
+        label="Revenue"
+        value={`$${Math.round(revenueUp).toLocaleString()}`}
+        delta={stats.revenueDelta}
+        hint="vs previous period"
+      />
+      <Card
+        label="Occupancy"
+        value={`${occupancyUp.toFixed(0)}%`}
+        delta={stats.occupancyDelta}
+        hint="of all court hours"
+      />
       <Card
         label="Peak hour"
         value={formatHour(stats.peak)}
         delta={stats.peakDelta}
-        hint={`${stats.peakCount} bookings at this hour`}
+        hint={`${Math.round(peakCountUp)} bookings at this hour`}
       />
     </div>
   );

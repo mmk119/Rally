@@ -5,6 +5,7 @@ import {
   closeHour,
   isSlotPreBooked,
   generateRecentBookings,
+  generateDemoBookings,
   newBookingRef,
   toDateStr,
 } from "./data/mockData";
@@ -14,17 +15,27 @@ const AppContext = createContext(null);
 export function AppProvider({ children }) {
   const [activeTab, setActiveTab] = useState("analytics");
   const [seedRows] = useState(() => generateRecentBookings());
+  const [demoRows] = useState(() => generateDemoBookings());
+  const [demoMode, setDemoMode] = useState(false);
   const [userBookings, setUserBookings] = useState([]);
   const [lastBookingRef, setLastBookingRef] = useState(null);
 
   const isSlotTaken = useCallback(
     (dateStr, hour, courtId) => {
       if (isSlotPreBooked(dateStr, hour, courtId)) return true;
+      if (
+        demoMode &&
+        demoRows.some(
+          (b) => b.date === dateStr && b.hour === hour && b.courtId === courtId && b.status !== "Cancelled"
+        )
+      ) {
+        return true;
+      }
       return userBookings.some(
         (b) => b.date === dateStr && b.hour === hour && b.courtId === courtId && b.status !== "Cancelled"
       );
     },
-    [userBookings]
+    [userBookings, demoMode, demoRows]
   );
 
   const findAvailableCourt = useCallback(
@@ -75,8 +86,8 @@ export function AppProvider({ children }) {
 
   const allRows = useMemo(() => {
     const mine = userBookings.map((b) => ({ ...b }));
-    return [...mine, ...seedRows];
-  }, [userBookings, seedRows]);
+    return demoMode ? [...mine, ...demoRows, ...seedRows] : [...mine, ...seedRows];
+  }, [userBookings, seedRows, demoMode, demoRows]);
 
   const value = {
     activeTab,
@@ -88,6 +99,8 @@ export function AppProvider({ children }) {
     findAvailableCourt,
     findNearestOpenHour,
     lastBookingRef,
+    demoMode,
+    setDemoMode,
     todayStr: toDateStr(new Date()),
   };
 

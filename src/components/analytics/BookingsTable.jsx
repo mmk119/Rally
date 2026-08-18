@@ -2,16 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../../store";
 import { formatDate, formatHour } from "../../data/mockData";
 
+// Muted status colors so nothing competes with the lime accent.
 const statusStyles = {
-  Confirmed: "bg-rally-100 text-rally-800",
-  Pending: "bg-amber-400/15 text-amber-300",
-  Cancelled: "bg-slate-100 text-slate-500",
+  Confirmed: { pill: "bg-ok/12 text-ok", dot: "bg-ok" },
+  Pending: { pill: "bg-warn/12 text-warn", dot: "bg-warn" },
+  Cancelled: { pill: "bg-slate-100 text-faint", dot: "bg-faint" },
 };
 
 function StatusPill({ status }) {
+  const s = statusStyles[status] || statusStyles.Cancelled;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusStyles[status]}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${status === "Confirmed" ? "bg-rally-600" : status === "Pending" ? "bg-amber-500" : "bg-slate-400"}`} />
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.pill}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
       {status}
     </span>
   );
@@ -92,26 +94,33 @@ export default function BookingsTable({ rangeKey }) {
     setSort((s) => ({ key, dir: s.key === key && s.dir === "desc" ? "asc" : "desc" }));
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-card shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+    <div className="rounded-card border border-hairline bg-card shadow-lg shadow-black/20">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
         <div>
-          <h3 className="font-display text-sm font-bold">Recent bookings</h3>
-          <p className="text-xs text-slate-400">Click a column to sort</p>
+          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">
+            Recent bookings
+          </h3>
+          <p className="text-xs text-faint">Click a column to sort</p>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search customer, court, status…"
-          className="w-56 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 text-sm outline-none transition focus:border-rally-500 focus:bg-raised"
+          aria-label="Search bookings"
+          className="w-56 rounded-full border border-hairline bg-raised px-4 py-1.5 text-sm text-ink placeholder:text-faint outline-none transition-colors duration-150 focus:border-rally-500"
         />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+            <tr className="border-b border-hairline text-xs uppercase tracking-wide text-faint">
               {columns.map((c) => (
                 <th key={c.key} className="px-4 py-3 font-semibold">
-                  <button onClick={() => toggleSort(c.key)} className="inline-flex items-center gap-1 hover:text-slate-600">
+                  <button
+                    onClick={() => toggleSort(c.key)}
+                    aria-sort={sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
+                    className="inline-flex items-center gap-1 rounded transition-colors duration-150 hover:text-muted"
+                  >
                     {c.label}
                     {sort.key === c.key && (
                       <svg viewBox="0 0 12 12" className={`h-3 w-3 ${sort.dir === "asc" ? "rotate-180" : ""}`} fill="currentColor">
@@ -123,24 +132,24 @@ export default function BookingsTable({ rangeKey }) {
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-50">
+          <tbody className="divide-y divide-hairline">
             {loading ? (
               <SkeletonRows />
             ) : failed ? (
               <tr>
                 <td colSpan={6} className="px-4 py-14 text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-400/15">
-                    <svg viewBox="0 0 24 24" className="h-6 w-6 text-red-300" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bad/12">
+                    <svg viewBox="0 0 24 24" className="h-6 w-6 text-bad" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 8v5" strokeLinecap="round" />
                       <circle cx="12" cy="16.5" r="0.6" fill="currentColor" stroke="none" />
                       <path d="M10.3 3.9L2.6 17.4A2 2 0 004.3 20.4h15.4a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" strokeLinejoin="round" />
                     </svg>
                   </div>
                   <p className="mt-3 text-sm font-semibold text-slate-700">Couldn't load bookings</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Something went wrong fetching recent bookings.</p>
+                  <p className="mt-0.5 text-xs text-muted">Something went wrong fetching recent bookings.</p>
                   <button
                     onClick={() => setAttempt((a) => a + 1)}
-                    className="mt-3 rounded-full bg-lime-pop px-5 py-1.5 text-xs font-bold text-night transition hover:bg-lime-glow"
+                    className="mt-3 rounded-full bg-lime-pop px-5 py-1.5 text-xs font-bold text-night transition-colors duration-150 hover:bg-lime-glow active:scale-[0.98]"
                   >
                     Retry
                   </button>
@@ -150,27 +159,59 @@ export default function BookingsTable({ rangeKey }) {
               <tr>
                 <td colSpan={6} className="px-4 py-14 text-center">
                   <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-                    <svg viewBox="0 0 24 24" className="h-6 w-6 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="11" cy="11" r="7" />
-                      <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
-                    </svg>
+                    {query ? (
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 text-faint" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="7" />
+                        <path d="M21 21l-4.3-4.3" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      // an empty court: the net, waiting for players
+                      <svg viewBox="0 0 24 24" className="h-6 w-6 text-faint" fill="none" stroke="currentColor" strokeWidth="1.8">
+                        <rect x="3" y="6" width="18" height="12" rx="1.5" />
+                        <path d="M12 6v12M3 12h18" strokeLinecap="round" />
+                      </svg>
+                    )}
                   </div>
-                  <p className="mt-3 text-sm font-semibold text-slate-600">No bookings match "{query}"</p>
-                  <button onClick={() => setQuery("")} className="mt-1 text-sm font-semibold text-rally-700 hover:underline">
-                    Clear search
-                  </button>
+                  {query ? (
+                    <>
+                      <p className="mt-3 text-sm font-semibold text-slate-700">
+                        Nothing matches "{query}"
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">Try a name, a court, or a status.</p>
+                      <button
+                        onClick={() => setQuery("")}
+                        className="mt-2 rounded-full px-3 py-1 text-sm font-semibold text-rally-700 transition-colors duration-150 hover:bg-rally-50"
+                      >
+                        Clear search
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-3 text-sm font-semibold text-slate-700">
+                        No bookings yet, your courts are wide open
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted">
+                        The first reservation will land here the moment it is made.
+                      </p>
+                    </>
+                  )}
                 </td>
               </tr>
             ) : (
               rows.map((r) => (
-                <tr key={r.ref + r.createdAt} className={`transition-colors hover:bg-slate-50/70 ${r.ref === lastBookingRef ? "flashRow" : ""}`}>
-                  <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-500">{r.ref}</td>
-                  <td className="px-4 py-3 font-medium">{r.customer}</td>
-                  <td className="px-4 py-3">{r.court}</td>
-                  <td className="px-4 py-3 text-slate-500">
+                <tr
+                  key={r.ref + r.createdAt}
+                  className={`transition-colors duration-150 hover:bg-raised ${
+                    r.ref === lastBookingRef ? "flashRow" : ""
+                  }`}
+                >
+                  <td className="tabularNums px-4 py-3 font-mono text-xs font-semibold text-faint">{r.ref}</td>
+                  <td className="px-4 py-3 font-medium text-ink">{r.customer}</td>
+                  <td className="px-4 py-3 text-slate-600">{r.court}</td>
+                  <td className="px-4 py-3 text-muted">
                     {formatDate(r.date)} · {formatHour(r.hour)}
                   </td>
-                  <td className="px-4 py-3 font-medium">${r.price}</td>
+                  <td className="tabularNums px-4 py-3 font-medium text-ink">${r.price}</td>
                   <td className="px-4 py-3">
                     <StatusPill status={r.status} />
                   </td>

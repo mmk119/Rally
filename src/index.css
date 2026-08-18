@@ -1,54 +1,86 @@
 @import "tailwindcss";
 
 /*
-  Dark premium theme for a racket sports club:
-  near black base with a green cast, one neon lime accent for CTAs,
-  high contrast text. The slate and rally scales are remapped to dark
-  equivalents so the whole app inherits the theme consistently.
+  Rally design tokens.
+
+  Layered dark surfaces with a slight green cast, one lime accent reserved for
+  the most important actions and states, and muted status colors so nothing
+  competes with the accent. The neutral and rally scales are remapped to these
+  tokens so every existing utility class resolves to the palette.
 */
 @theme {
   --font-display: "Barlow Condensed", sans-serif;
   --font-sans: "Barlow", sans-serif;
 
   /* surfaces */
-  --color-night: #0a0f0b;
-  --color-card: #141b15;
-  --color-raised: #1b241c;
+  --color-night: #0b0f0c;
+  --color-card: #141a16;
+  --color-raised: #1b2320;
+  --color-hairline: #232b27;
 
-  /* remapped neutral scale (dark) */
-  --color-slate-50: #18211a;
-  --color-slate-100: #1f2a21;
-  --color-slate-200: #2b3a2e;
-  --color-slate-300: #45564a;
-  --color-slate-400: #8fa392;
-  --color-slate-500: #a9bcab;
-  --color-slate-600: #c5d4c5;
-  --color-slate-700: #d9e4d7;
-  --color-slate-800: #eaf2e7;
-
-  /* rally green scale, inverted for dark */
-  --color-rally-50: #132018;
-  --color-rally-100: #1a2e20;
-  --color-rally-200: #29452f;
-  --color-rally-300: #315b3c;
-  --color-rally-400: #3f7a4c;
-  --color-rally-500: #4ade80;
-  --color-rally-600: #22c55e;
-  --color-rally-700: #86efac;
-  --color-rally-800: #b5f0c5;
-  --color-rally-900: #d7fbe0;
-
-  /* the accent */
+  /* accent, used sparingly */
   --color-lime-pop: #bef264;
-  --color-lime-glow: #d9f99d;
+  --color-lime-glow: #a3e635;
 
-  --color-ink: #f0f6ec;
+  /* text */
+  --color-ink: #f5f7f4;
+  --color-muted: #9ba8a0;
+  --color-faint: #5f6b64;
+
+  /* status, deliberately muted so only the lime pops */
+  --color-ok: #4ade80;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+
+  /* neutral scale remapped onto the surface + text tokens */
+  --color-slate-50: #141a16;
+  --color-slate-100: #1b2320;
+  --color-slate-200: #232b27;
+  --color-slate-300: #2e3833;
+  --color-slate-400: #5f6b64;
+  --color-slate-500: #9ba8a0;
+  --color-slate-600: #b9c4bd;
+  --color-slate-700: #d8dfd9;
+  --color-slate-800: #f5f7f4;
+
+  /* accent-tinted surfaces and accent text */
+  --color-rally-50: #16211a;
+  --color-rally-100: #1e2c22;
+  --color-rally-200: #2c4030;
+  --color-rally-300: #3a5740;
+  --color-rally-400: #4d7350;
+  --color-rally-500: #bef264;
+  --color-rally-600: #a3e635;
+  --color-rally-700: #bef264;
+  --color-rally-800: #cdf58a;
+  --color-rally-900: #e2fbb4;
+
+  /* one radius language across cards, inputs, buttons and pills */
+  --radius-card: 16px;
+  --radius-control: 12px;
 }
 
 body {
   background: var(--color-night);
   color: var(--color-ink);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Barlow Condensed sets numerals and headings; keep figures tabular so
+   counting numbers and table columns never jitter as digits change. */
+.font-display {
+  letter-spacing: 0.01em;
+}
+.tabularNums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* consistent focus ring in the accent color across every control */
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-lime-pop);
+  outline-offset: 2px;
+  border-radius: var(--radius-control);
 }
 
 /* typing indicator dots */
@@ -60,7 +92,7 @@ body {
   width: 6px;
   height: 6px;
   border-radius: 9999px;
-  background: #bef264;
+  background: var(--color-lime-pop);
   animation: bounceDot 1.2s infinite ease-in-out;
 }
 .typingDot:nth-child(2) { animation-delay: 0.15s; }
@@ -82,30 +114,43 @@ body {
 }
 
 @keyframes popIn {
-  0% { transform: scale(0.85); opacity: 0; }
-  60% { transform: scale(1.03); }
+  0% { transform: scale(0.92); opacity: 0; }
+  60% { transform: scale(1.02); }
   100% { transform: scale(1); opacity: 1; }
 }
-.popIn { animation: popIn 0.35s ease-out both; }
+.popIn { animation: popIn 0.32s ease-out both; }
 
 @keyframes slideUp {
-  from { transform: translateY(12px); opacity: 0; }
+  from { transform: translateY(10px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
-.slideUp { animation: slideUp 0.25s ease-out both; }
+.slideUp { animation: slideUp 0.2s ease-out both; }
 
 @keyframes shimmer {
   0% { background-position: -400px 0; }
   100% { background-position: 400px 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, #1b241c 25%, #263127 50%, #1b241c 75%);
+  background: linear-gradient(90deg, #1b2320 25%, #263029 50%, #1b2320 75%);
   background-size: 800px 100%;
   animation: shimmer 1.4s infinite linear;
 }
 
+/* a new booking lands: slide in, then a lime tint fades out over ~1.5s */
 @keyframes flashRow {
-  0% { background-color: #1a2e20; }
+  0% { background-color: rgba(190, 242, 100, 0.16); }
   100% { background-color: transparent; }
 }
-.flashRow { animation: flashRow 2.5s ease-out both; }
+@keyframes landRow {
+  from { transform: translateY(-6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.flashRow {
+  animation: flashRow 1.5s ease-out both, landRow 0.28s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popIn, .slideUp, .flashRow, .checkCircle, .checkMark, .typingDot, .skeleton {
+    animation: none !important;
+  }
+}

@@ -13,9 +13,11 @@ Optionally copy `.env.example` to `.env` and add an OpenAI API key so the chat b
 
 ## What is inside
 
-- **Analytics tab** — four KPI cards with trend indicators, an area chart plus a donut chart driven by a 7/30 day range control, and a sortable recent bookings table with status pills, a loading skeleton, an empty state, and an error state with retry.
+- **Analytics tab** — four KPI cards whose numbers count up on load, an area chart plus a donut chart, an **occupancy heatmap** showing demand by court and hour, and a sortable recent bookings table with status pills, a loading skeleton, an empty state, and an error state with retry. A 7/30 day range control drives all of them.
 - **Booking tab** — a four step flow: pick a day and hourly slot (available vs full states), choose a court, add details, confirm. Confirmation shows a booking reference with an animated check.
-- **AI assistant** — floating chat available on both tabs, with a typing indicator, quick reply chips, and rich replies (booking confirmation cards and KPI snippet cards with a sparkline). It can complete a booking from free form messages like "book a court Friday at 3" and the Booking tab plus Analytics table reflect the result immediately.
+- **Coach, the AI assistant** — floating chat available on both tabs, with a typing indicator, quick reply chips, and rich replies (booking confirmation cards and KPI snippet cards with a sparkline). It completes bookings from free form messages like "book a court Friday at 3", and the Booking tab plus the analytics table reflect the result immediately, with the new row flashing as it lands. The first time you open it in a session Coach **volunteers one insight computed from the booking data** — the busiest weekday and hour, and how full it runs — rather than a canned line.
+
+- **Demo mode** — a subtle "Demo data" toggle in the top bar preloads a full day of bookings so the analytics, heatmap, and table look busy instantly for a live walkthrough. Toggling it off restores the default seeded data.
 
 ## How the bot works
 
@@ -35,6 +37,8 @@ The loading skeleton shows on load and whenever the date range changes. The empt
 ## Design
 
 Dark premium theme following fitness industry color research: a near black base with a green cast for power and a high end feel, one neon lime accent (#BEF264, the color of a padel ball) reserved for CTAs and key states, and high contrast text throughout. Typography is Barlow Condensed / Barlow, an athletic pairing recommended by the UI UX Pro Max design dataset for gyms and sports brands.
+
+The palette is defined once as design tokens in `src/index.css` and used everywhere: layered surfaces (`#0B0F0C` base, `#141A16` card, `#1B2320` raised), three text weights, muted status colors so only the lime pops, hairline borders, and a single radius language across cards, inputs, buttons, and pills.
 
 ## Stack and AI tools
 

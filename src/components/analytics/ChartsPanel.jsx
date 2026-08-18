@@ -16,25 +16,29 @@ import { courts } from "../../data/mockData";
 
 // Four steps with a clear lightness progression so slices stay distinguishable
 // on the dark card without relying on hue alone.
-const pieColors = ["#bef264", "#86efac", "#34d399", "#16a34a"];
+// Lime leads as the primary series; the rest step down in lightness so slices
+// stay distinguishable on the dark card without introducing new hues.
+const pieColors = ["#bef264", "#a3e635", "#6b9e4a", "#3f6135"];
 const tooltipStyle = {
   borderRadius: 12,
-  border: "1px solid #2b3a2e",
-  background: "#141b15",
-  color: "#f0f6ec",
+  border: "1px solid #232b27",
+  background: "#1b2320",
+  color: "#f5f7f4",
   fontSize: 12,
+  boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
 };
 // Recharts defaults tooltip rows to black, which is unreadable on the dark card,
 // so item and label colors are set explicitly.
-const tooltipItemStyle = { color: "#f0f6ec" };
-const tooltipLabelStyle = { color: "#a9bcab", marginBottom: 2 };
+const tooltipItemStyle = { color: "#f5f7f4" };
+const tooltipLabelStyle = { color: "#9ba8a0", marginBottom: 2 };
+const axisTick = { fontSize: 11, fill: "#5f6b64" };
 
 function ChartCard({ title, subtitle, children }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-card p-5 shadow-sm">
+    <div className="rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20">
       <div className="mb-4">
-        <h3 className="font-display text-sm font-bold uppercase tracking-wide">{title}</h3>
-        <p className="text-xs text-slate-400">{subtitle}</p>
+        <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">{title}</h3>
+        <p className="text-xs text-faint">{subtitle}</p>
       </div>
       {children}
     </div>
@@ -70,21 +74,21 @@ export default function ChartsPanel({ visible, range }) {
                     <stop offset="100%" stopColor="#bef264" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2a21" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#232b27" vertical={false} />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 11, fill: "#94a3b8" }}
+                  tick={axisTick}
                   tickLine={false}
                   axisLine={false}
                   interval="preserveStartEnd"
                   minTickGap={24}
                 />
-                <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} tickLine={false} axisLine={false} />
+                <YAxis tick={axisTick} tickLine={false} axisLine={false} width={32} />
                 <Tooltip
                   contentStyle={tooltipStyle}
                   itemStyle={tooltipItemStyle}
                   labelStyle={tooltipLabelStyle}
-                  cursor={{ stroke: "#45564a", strokeWidth: 1 }}
+                  cursor={{ stroke: "#2e3833", strokeWidth: 1 }}
                   formatter={(v, name) => (name === "revenue" ? [`$${v}`, "Revenue"] : [v, "Bookings"])}
                 />
                 <Area type="monotone" dataKey="bookings" stroke="#bef264" strokeWidth={2.5} fill="url(#rallyFill)" />
@@ -123,7 +127,7 @@ export default function ChartsPanel({ visible, range }) {
                   iconSize={8}
                   wrapperStyle={{ fontSize: 12 }}
                   // label text keeps one readable color; the dot carries the series color
-                  formatter={(value) => <span style={{ color: "#a9bcab" }}>{value}</span>}
+                  formatter={(value) => <span style={{ color: "#9ba8a0" }}>{value}</span>}
                 />
               </PieChart>
             </ResponsiveContainer>
