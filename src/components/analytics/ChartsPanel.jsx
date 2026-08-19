@@ -17,14 +17,20 @@ import { courts } from "../../data/mockData";
 // Lime leads as the primary series; the rest step down in lightness so slices
 // stay distinguishable on the dark card without introducing new hues.
 const pieColors = ["#bef264", "#a3e635", "#6b9e4a", "#3f6135"];
+// Near black rather than the raised surface: at #1b2320 the tooltip sat within
+// a few percent of the card behind it and read as floating text with no panel.
 const tooltipStyle = {
   borderRadius: 12,
-  border: "1px solid #232b27",
-  background: "#1b2320",
+  border: "1px solid #3a453f",
+  background: "#080b09",
   color: "#f5f7f4",
   fontSize: 12,
-  boxShadow: "0 8px 24px rgba(0,0,0,0.45)",
+  padding: "8px 12px",
+  boxShadow: "0 10px 30px rgba(0,0,0,0.65)",
 };
+// The donut's centre label is positioned, so without a z-index the tooltip
+// renders underneath it and the two sets of words overlap.
+const tooltipWrapperStyle = { zIndex: 20, outline: "none" };
 // Recharts defaults tooltip rows to black, which is unreadable on the dark card,
 // so item and label colors are set explicitly.
 const tooltipItemStyle = { color: "#f5f7f4" };
@@ -109,6 +115,7 @@ export default function ChartsPanel({ visible, range }) {
                 <YAxis tick={axisTick} tickLine={false} axisLine={false} width={40} />
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  wrapperStyle={tooltipWrapperStyle}
                   itemStyle={tooltipItemStyle}
                   labelStyle={tooltipLabelStyle}
                   cursor={{ stroke: "#bef264", strokeWidth: 1, strokeDasharray: "4 4" }}
@@ -150,6 +157,7 @@ export default function ChartsPanel({ visible, range }) {
                 </Pie>
                 <Tooltip
                   contentStyle={tooltipStyle}
+                  wrapperStyle={tooltipWrapperStyle}
                   itemStyle={tooltipItemStyle}
                   labelStyle={tooltipLabelStyle}
                   formatter={(v, name) => [`${v} bookings`, name]}
