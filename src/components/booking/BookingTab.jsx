@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 // Ball in a dark arena with bokeh: the photographic corner on the summary card,
 // the detail the Stitch booking exploration uses to lift it above a plain panel.
 import courtLights from "../../../pics/5.png";
@@ -87,7 +87,10 @@ function Stepper({ current }) {
   );
 }
 
-function SuccessScreen({ booking, onDone }) {
+function SuccessScreen({ bookings, onDone }) {
+  // one court hour per selected day, so a block booking confirms as a set
+  const first = bookings[0];
+  const multi = bookings.length > 1;
   return (
     <div className="popIn glassCard relative mx-auto max-w-md overflow-hidden rounded-card p-8 text-center shadow-2xl shadow-black/40">
       {/* a wash of accent behind the check, so the finish feels lit rather than flat */}
@@ -103,14 +106,31 @@ function SuccessScreen({ booking, onDone }) {
         You're on the court
       </h2>
       <p className="relative mt-1 text-sm text-muted">
-        {booking.court} · {formatDate(booking.date)} at {formatHour(booking.hour)}
+        {first.court} · {multi ? `${bookings.length} days` : formatDate(first.date)} at{" "}
+        {formatHour(first.hour)}
       </p>
       <div className="relative mt-5 rounded-card border border-lime-pop/25 bg-lime-pop/8 px-4 py-3">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Booking reference</p>
-        <p className="tabularNums mt-0.5 font-mono text-xl font-bold text-lime-pop">{booking.ref}</p>
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">
+          {multi ? `Booking references (${bookings.length})` : "Booking reference"}
+        </p>
+        {multi ? (
+          // each day is its own reservation, so each gets its own reference and
+          // can be cancelled on its own later
+          <ul className="mt-1 space-y-1">
+            {bookings.map((b) => (
+              <li key={b.ref} className="flex items-center justify-between gap-3 text-sm">
+                <span className="text-muted">{formatDate(b.date)}</span>
+                <span className="tabularNums font-mono font-bold text-lime-pop">{b.ref}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="tabularNums mt-0.5 font-mono text-xl font-bold text-lime-pop">{first.ref}</p>
+        )}
       </div>
       <p className="relative mt-3 text-xs text-faint">
-        A confirmation was added to Recent bookings in Analytics.
+        {multi ? "All " + bookings.length + " were added" : "A confirmation was added"} to Recent
+        bookings in Analytics.
       </p>
       <button
         onClick={onDone}
@@ -126,7 +146,8 @@ function SuccessScreen({ booking, onDone }) {
  * The live summary rail. Every choice lands here as it is made, so the booking
  * is reviewable at every step instead of only on the final screen.
  */
-function SummaryRail({ date, hour, court, name, players, notes, step }) {
+function SummaryRail({ dates, hour, court, name, players, notes, step }) {
+  const total = court ? court.price * Math.max(dates.length, 1) : 0;
   const rows = [
     { label: "Players", value: players ? `${players} players` : null },
     { label: "Booked for", value: name.trim() || null },
@@ -161,10 +182,15 @@ function SummaryRail({ date, hour, court, name, players, notes, step }) {
         />
         <div className="relative flex items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Date</p>
-            <p className={`mt-1 font-display text-lg font-bold ${date ? "text-ink" : "text-faint"}`}>
-              {date ? formatDate(date) : "Not set"}
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">
+              {dates.length > 1 ? `Dates · ${dates.length}` : "Date"}
             </p>
+            <p className={`mt-1 font-display text-lg font-bold ${dates.length ? "text-ink" : "text-faint"}`}>
+              {dates.length ? formatDate(dates[0]) : "Not set"}
+            </p>
+            {dates.length > 1 && (
+              <p className="text-[11px] text-muted">+{dates.length - 1} more day{dates.length > 2 ? "s" : ""}</p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Time</p>
@@ -203,9 +229,16 @@ function SummaryRail({ date, hour, court, name, players, notes, step }) {
       )}
 
       <div className="flex items-center justify-between border-t border-hairline bg-raised/40 px-5 py-4">
-        <span className="text-xs font-semibold uppercase tracking-wide text-faint">Total</span>
+        <span className="text-xs font-semibold uppercase tracking-wide text-faint">
+          Total
+          {court && dates.length > 1 && (
+            <span className="ml-1 font-normal normal-case text-faint">
+              (${court.price} × {dates.length})
+            </span>
+          )}
+        </span>
         <span className="tabularNums font-display text-2xl font-bold text-lime-pop">
-          {court ? `$${court.price}` : "—"}
+          {court ? `$${total}` : "—"}
         </span>
       </div>
 
@@ -221,7 +254,9 @@ function SummaryRail({ date, hour, court, name, players, notes, step }) {
 export default function BookingTab() {
   const { isSlotTaken, addBooking, cancelBooking, activeUserBookings } = useApp();
   const [step, setStep] = useState(0);
-  const [date, setDate] = useState(null);
+  // several days can share one booking session: each selected day becomes its
+  // own court hour reservation, so a block or weekly booking is one pass
+  const [dates, setDates] = useState([]);
   const [hour, setHour] = useState(null);
   const [courtId, setCourtId] = useState(null);
   const [name, setName] = useState("");
@@ -253,9 +288,45 @@ export default function BookingTab() {
     return out;
   }, []);
 
+  /** Free on every selected day: what a court hour has to be to be bookable. */
+  const freeOnAllDates = useCallback(
+    (hourValue, courtId) => dates.length > 0 && dates.every((d) => !isSlotTaken(d, hourValue, courtId)),
+    [dates, isSlotTaken]
+  );
+
+  /** How many courts are open at this hour across every selected day. */
+  const courtsFreeAt = useCallback(
+    (hourValue) => courts.filter((c) => freeOnAllDates(hourValue, c.id)).length,
+    [freeOnAllDates]
+  );
+
+  /**
+   * Adding or removing a day can invalidate a time or court chosen earlier, so
+   * both are re-checked against the new set rather than left silently wrong.
+   */
+  const toggleDate = (dayStr) => {
+    setDates((prev) => {
+      const next = prev.includes(dayStr)
+        ? prev.filter((d) => d !== dayStr) // clicking a chosen day clears it
+        : [...prev, dayStr].sort();
+
+      if (hour !== null) {
+        const stillOpen =
+          next.length > 0 && next.every((d) => courts.some((c) => !isSlotTaken(d, hour, c.id)));
+        if (!stillOpen) {
+          setHour(null);
+          setCourtId(null);
+        } else if (courtId !== null && next.some((d) => isSlotTaken(d, hour, courtId))) {
+          setCourtId(null);
+        }
+      }
+      return next;
+    });
+  };
+
   const reset = () => {
     setStep(0);
-    setDate(null);
+    setDates([]);
     setHour(null);
     setCourtId(null);
     setName("");
@@ -272,11 +343,14 @@ export default function BookingTab() {
       setStep(2);
       return;
     }
-    const booking = addBooking({ courtId, date, hour, customer: name.trim(), players, notes, source: "form" });
-    setConfirmed(booking);
+    // one reservation per day, so each can be cancelled independently later
+    const created = dates.map((d) =>
+      addBooking({ courtId, date: d, hour, customer: name.trim(), players, notes, source: "form" })
+    );
+    setConfirmed(created);
   };
 
-  if (confirmed) return <SuccessScreen booking={confirmed} onDone={reset} />;
+  if (confirmed) return <SuccessScreen bookings={confirmed} onDone={reset} />;
 
   const selectedCourt = courts.find((c) => c.id === courtId);
 
@@ -306,24 +380,40 @@ export default function BookingTab() {
           {step === 0 && (
             <div className="slideUp space-y-7">
               <section>
-                <div className="mb-3 flex items-center gap-2.5">
+                <div className="mb-3 flex flex-wrap items-center gap-2.5">
                   <StepBadge n={1} active />
                   <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                     Choose a day
                   </h3>
+                  {/* multi select is not discoverable on its own, so say it */}
+                  <span className="text-xs text-faint">
+                    {dates.length > 1
+                      ? `${dates.length} days selected · same court and time on each`
+                      : "Pick one, or several for a block booking"}
+                  </span>
+                  {dates.length > 0 && (
+                    <button
+                      onClick={() => {
+                        setDates([]);
+                        setHour(null);
+                        setCourtId(null);
+                      }}
+                      className="ml-auto rounded-full px-2.5 py-1 text-xs font-semibold text-faint transition-colors duration-150 hover:bg-raised hover:text-ink"
+                    >
+                      Clear
+                    </button>
+                  )}
                 </div>
                 {/* the strip scrolls; the mask fades the last chip out so the
                     cut edge reads as "more days" rather than a clipped card */}
                 <div className="dayStrip flex gap-2 overflow-x-auto pb-2">
                   {days.map((d) => {
-                    const active = date === d.str;
+                    const active = dates.includes(d.str);
                     return (
                       <button
                         key={d.str}
-                        onClick={() => {
-                          setDate(d.str);
-                          setHour(null);
-                        }}
+                        onClick={() => toggleDate(d.str)}
+                        aria-pressed={active}
                         className={`slotBase flex min-w-16 flex-col items-center rounded-control border px-3 py-2.5 ${
                           active
                             ? "limeGlow border-lime-pop bg-lime-pop text-night"
@@ -344,7 +434,7 @@ export default function BookingTab() {
               <section>
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
-                    <StepBadge n={2} active={Boolean(date)} />
+                    <StepBadge n={2} active={dates.length > 0} />
                     <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                       Choose a start time
                     </h3>
@@ -362,7 +452,7 @@ export default function BookingTab() {
                   </div>
                 </div>
 
-                {!date ? (
+                {dates.length === 0 ? (
                   <div className="rounded-control border border-dashed border-hairline bg-night/40 px-4 py-10 text-center">
                     <Glyph className="mx-auto h-7 w-7 text-faint">
                       <rect x="3" y="5" width="18" height="16" rx="2" />
@@ -389,7 +479,7 @@ export default function BookingTab() {
                           </div>
                           <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
                             {partHours.map((h) => {
-                              const left = courts.filter((c) => !isSlotTaken(date, h, c.id)).length;
+                              const left = courtsFreeAt(h);
                               const full = left === 0;
                               const active = hour === h;
                               return (
@@ -434,7 +524,7 @@ export default function BookingTab() {
 
               <div className="flex justify-end border-t border-hairline pt-5">
                 <button
-                  disabled={!date || hour === null}
+                  disabled={dates.length === 0 || hour === null}
                   onClick={() => setStep(1)}
                   className="rounded-control bg-lime-pop px-7 py-2.5 text-sm font-bold text-night transition duration-150 enabled:hover:bg-lime-glow enabled:hover:shadow-[0_0_20px_rgba(190,242,100,0.35)] disabled:cursor-not-allowed disabled:opacity-40"
                 >
@@ -453,14 +543,16 @@ export default function BookingTab() {
                     Court assignment
                   </h3>
                   <p className="text-xs text-faint">
-                    {formatDate(date)} at {formatHour(hour)}
+                    {dates.length > 1
+                      ? `${dates.length} days at ${formatHour(hour)} · must be free on all of them`
+                      : `${formatDate(dates[0])} at ${formatHour(hour)}`}
                   </p>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 {courts.map((c) => {
-                  const taken = isSlotTaken(date, hour, c.id);
+                  const taken = !freeOnAllDates(hour, c.id);
                   const active = courtId === c.id;
                   return (
                     <button
@@ -640,15 +732,31 @@ export default function BookingTab() {
               <div className="space-y-3 rounded-card border border-hairline bg-night/40 p-5 text-sm">
                 {[
                   ["Court", `${selectedCourt.name} · ${selectedCourt.type}`],
-                  ["When", `${formatDate(date)} at ${formatHour(hour)}`],
+                  ["Time", `${formatHour(hour)} · 60 min`],
                   ["Booked for", `${name || "—"} · ${players} players`],
-                  ["Price", `$${selectedCourt.price} for 60 min`],
+                  [
+                    "Price",
+                    dates.length > 1
+                      ? `$${selectedCourt.price * dates.length} · $${selectedCourt.price} × ${dates.length} days`
+                      : `$${selectedCourt.price} for 60 min`,
+                  ],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-4">
                     <span className="text-faint">{k}</span>
                     <span className="text-right font-semibold text-ink">{v}</span>
                   </div>
                 ))}
+                {/* every day being booked, listed so nothing is confirmed unseen */}
+                <div className="flex justify-between gap-4">
+                  <span className="text-faint">{dates.length > 1 ? `Days (${dates.length})` : "Day"}</span>
+                  <span className="text-right font-semibold text-ink">
+                    {dates.map((d) => (
+                      <span key={d} className="block">
+                        {formatDate(d)}
+                      </span>
+                    ))}
+                  </span>
+                </div>
                 {notes && (
                   <div className="flex justify-between gap-4">
                     <span className="text-faint">Notes</span>
@@ -677,7 +785,7 @@ export default function BookingTab() {
 
         <div className="riseIn min-w-0" style={{ "--d": "120ms" }}>
           <SummaryRail
-            date={date}
+            dates={dates}
             hour={hour}
             court={selectedCourt}
             name={name}
