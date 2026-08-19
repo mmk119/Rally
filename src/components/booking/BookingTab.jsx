@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 // Ball in a dark arena with bokeh: the photographic corner on the summary card,
 // the detail the Stitch booking exploration uses to lift it above a plain panel.
 import courtLights from "../../../pics/5.png";
@@ -87,6 +87,85 @@ function Stepper({ current }) {
   );
 }
 
+/**
+ * The finish: a ball drops onto the court, the impact ripples, and the smash
+ * throws the ball out of frame to leave the confirmation check behind.
+ *
+ * Staged rather than one keyframe so the beats are readable, and it settles on
+ * the final frame immediately under prefers-reduced-motion — the confirmation
+ * has to be legible whether or not it is allowed to move.
+ */
+function SmashConfirmation() {
+  const [stage, setStage] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+      ? 3
+      : 0
+  );
+
+  useEffect(() => {
+    if (stage === 3) return; // reduced motion: already on the final frame
+    const timers = [
+      setTimeout(() => setStage(1), 420), // ball meets the court
+      setTimeout(() => setStage(2), 760), // ripple out, ball away
+      setTimeout(() => setStage(3), 1040), // check settles
+    ];
+    return () => timers.forEach(clearTimeout);
+    // one run per mount; a booking always remounts this screen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // the overshoot the effect depends on; as a class this must be the arbitrary
+  // ease-[] form, since a bare cubic-bezier(...) string is not a utility at all
+  const overshoot = "ease-[cubic-bezier(0.175,0.885,0.32,1.275)]";
+
+  return (
+    <div className="relative mx-auto h-40 w-full overflow-hidden rounded-card border border-lime-pop/20 bg-night/50">
+      {/* court markings: service line, centre line, and the side walls */}
+      <div className="absolute inset-x-0 bottom-8 h-px bg-ink/25" />
+      <div className="absolute bottom-8 left-1/2 top-0 w-px -translate-x-1/2 bg-ink/15" />
+      <div className="absolute bottom-8 left-10 top-0 w-px bg-ink/10" />
+      <div className="absolute bottom-8 right-10 top-0 w-px bg-ink/10" />
+
+      {/* the ball */}
+      <div
+        className={`absolute h-7 w-7 rounded-full bg-lime-pop shadow-lg shadow-lime-pop/30 transition-all duration-[420ms] ${
+          stage === 0
+            ? "-top-10 left-1/4 scale-125 opacity-0"
+            : stage === 1
+            ? "left-1/2 top-[104px] -translate-x-1/2 scale-90 opacity-100 ease-in"
+            : "left-[62%] top-8 scale-100 opacity-0"
+        }`}
+        aria-hidden="true"
+      >
+        {/* the seam, so it reads as a ball rather than a dot */}
+        <svg viewBox="0 0 24 24" className="h-full w-full" fill="none">
+          <path d="M4.6 6.2c3.4 1.5 5.2 4 5.2 5.8s-1.8 4.3-5.2 5.8" stroke="#0b0f0c" strokeWidth="1.6" />
+          <path d="M19.4 6.2c-3.4 1.5-5.2 4-5.2 5.8s1.8 4.3 5.2 5.8" stroke="#0b0f0c" strokeWidth="1.6" />
+        </svg>
+      </div>
+
+      {/* impact ripple on the court surface */}
+      <div
+        className={`pointer-events-none absolute bottom-6 left-1/2 h-4 w-20 -translate-x-1/2 rounded-full bg-lime-pop/40 blur-sm transition-all duration-300 ${
+          stage === 1 ? "scale-150 opacity-100" : "scale-0 opacity-0"
+        }`}
+        aria-hidden="true"
+      />
+
+      {/* the confirmation mark the smash leaves behind */}
+      <div
+        className={`absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-lime-pop shadow-lg shadow-lime-pop/30 transition-all duration-500 ${overshoot} ${
+          stage >= 2 ? "scale-100 rotate-0 opacity-100" : "scale-0 -rotate-45 opacity-0"
+        }`}
+      >
+        <svg viewBox="0 0 24 24" className="h-8 w-8 text-night" fill="none" stroke="currentColor" strokeWidth="3.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 function SuccessScreen({ bookings, onDone }) {
   // one court hour per selected day, so a block booking confirms as a set
   const first = bookings[0];
@@ -98,11 +177,8 @@ function SuccessScreen({ bookings, onDone }) {
         className="pointer-events-none absolute inset-x-0 -top-24 h-56 bg-[radial-gradient(closest-side,rgba(190,242,100,0.22),transparent)]"
         aria-hidden="true"
       />
-      <svg viewBox="0 0 100 100" className="relative mx-auto h-24 w-24">
-        <circle cx="50" cy="50" r="46" fill="none" stroke="#a3e635" strokeWidth="5" className="checkCircle" />
-        <path d="M32 52l13 13 24-28" fill="none" stroke="#bef264" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" className="checkMark" />
-      </svg>
-      <h2 className="relative mt-4 font-display text-3xl font-bold uppercase tracking-tight text-ink">
+      <SmashConfirmation />
+      <h2 className="relative mt-5 font-display text-3xl font-bold uppercase tracking-tight text-ink">
         You're on the court
       </h2>
       <p className="relative mt-1 text-sm text-muted">
