@@ -11,6 +11,19 @@ npm run dev
 
 Optionally copy `.env.example` to `.env` and add an OpenAI API key so the chat bot uses a real model. Without a key the bot falls back to keyword and pattern matching, so the demo never breaks.
 
+## Deployed
+
+Pushed to `main`, GitHub Actions builds the site and publishes it to GitHub Pages
+(`.github/workflows/deploy.yml`). The build reads `VITE_OPENAI_API_KEY` from a
+repository secret.
+
+**The key is public once deployed.** Vite inlines `VITE_*` variables into the
+client bundle, so anyone can read the key out of the deployed JavaScript. The
+secret keeps it out of git history, nothing more. Scope the key to the minimum,
+put a spend limit on it, and rotate it when the demo is over. If the secret is
+missing the build still succeeds and Coach runs on its offline keyword parser,
+so the site is never broken — just less clever.
+
 ## What is inside
 
 - **Analytics tab** — four KPI cards whose numbers count up on load, an area chart plus a donut chart, an **occupancy heatmap** showing demand by court and hour, and a sortable recent bookings table with status pills, a loading skeleton, an empty state, and an error state with retry. A 7/30 day range control drives all of them.
