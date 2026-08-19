@@ -14,13 +14,16 @@ import {
   toDateStr,
 } from "../../data/mockData";
 
-/** Coach's mark: a ball with a lime ring, matching the product logo. */
+/** Coach's mark: the ball seam from the product logo, ringed in lime. */
 function CoachAvatar({ className = "h-9 w-9" }) {
   return (
-    <div className={`flex ${className} shrink-0 items-center justify-center rounded-full bg-lime-pop/12`}>
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
-        <circle cx="12" cy="12" r="8" stroke="#bef264" strokeWidth="2" />
-        <circle cx="12" cy="12" r="3" fill="#bef264" />
+    <div
+      className={`flex ${className} shrink-0 items-center justify-center rounded-full border border-lime-pop/30 bg-lime-pop/10`}
+    >
+      <svg viewBox="0 0 24 24" className="h-[60%] w-[60%]" fill="none" aria-hidden="true">
+        <circle cx="12" cy="12" r="9.2" fill="#bef264" />
+        <path d="M4.6 6.2c3.4 1.5 5.2 4 5.2 5.8s-1.8 4.3-5.2 5.8" stroke="#0b0f0c" strokeWidth="1.5" fill="none" />
+        <path d="M19.4 6.2c-3.4 1.5-5.2 4-5.2 5.8s1.8 4.3 5.2 5.8" stroke="#0b0f0c" strokeWidth="1.5" fill="none" />
       </svg>
     </div>
   );
@@ -30,7 +33,7 @@ function CoachAvatar({ className = "h-9 w-9" }) {
 
 function BookingCard({ booking, onViewTab }) {
   return (
-    <div className="popIn mt-2 w-full rounded-card border border-rally-200 bg-rally-50 p-4">
+    <div className="popIn mt-2 w-full rounded-card border border-lime-pop/25 bg-lime-pop/6 p-4">
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lime-pop text-xs font-bold text-night">
           ✓
@@ -50,11 +53,11 @@ function BookingCard({ booking, onViewTab }) {
         <div className="flex justify-between gap-3"><span className="text-muted">When</span><span className="font-semibold text-ink">{formatDate(booking.date)} · {formatHour(booking.hour)}</span></div>
         <div className="flex justify-between gap-3"><span className="text-muted">Players</span><span className="font-semibold text-ink">{booking.players || 4}</span></div>
         <div className="flex justify-between gap-3"><span className="text-muted">Price</span><span className="tabularNums font-semibold text-ink">${booking.price} · 60 min</span></div>
-        <div className="flex justify-between gap-3"><span className="text-muted">Reference</span><span className="tabularNums font-mono font-bold text-rally-700">{booking.ref}</span></div>
+        <div className="flex justify-between gap-3"><span className="text-muted">Reference</span><span className="tabularNums font-mono font-bold text-lime-pop">{booking.ref}</span></div>
       </div>
       <button
         onClick={onViewTab}
-        className="mt-3 w-full rounded-full bg-lime-pop py-2 text-xs font-bold text-night transition-colors duration-150 hover:bg-lime-glow active:scale-[0.99]"
+        className="mt-3 w-full rounded-control bg-lime-pop py-2 text-xs font-bold text-night transition duration-150 hover:bg-lime-glow hover:shadow-[0_0_16px_rgba(190,242,100,0.3)] active:scale-[0.99]"
       >
         View in Booking tab
       </button>
@@ -67,7 +70,7 @@ function CancelCard({ booking, onConfirm, onKeep, resolved }) {
   return (
     <div
       className={`popIn mt-2 w-full rounded-card border p-4 ${
-        resolved ? "border-hairline bg-raised opacity-70" : "border-bad/40 bg-bad/8"
+        resolved ? "border-hairline bg-raised/60 opacity-70" : "border-bad/40 bg-bad/8"
       }`}
     >
       <div className="flex items-center gap-2">
@@ -81,7 +84,7 @@ function CancelCard({ booking, onConfirm, onKeep, resolved }) {
       <div className="mt-3 space-y-1.5 text-sm">
         <div className="flex justify-between gap-3"><span className="text-muted">Court</span><span className="font-semibold text-ink">{booking.court}</span></div>
         <div className="flex justify-between gap-3"><span className="text-muted">When</span><span className="font-semibold text-ink">{formatDate(booking.date)} · {formatHour(booking.hour)}</span></div>
-        <div className="flex justify-between gap-3"><span className="text-muted">Reference</span><span className="tabularNums font-mono font-bold text-rally-700">{booking.ref}</span></div>
+        <div className="flex justify-between gap-3"><span className="text-muted">Reference</span><span className="tabularNums font-mono font-bold text-lime-pop">{booking.ref}</span></div>
       </div>
       {!resolved && (
         <div className="mt-3 flex gap-2">
@@ -106,7 +109,7 @@ function CancelCard({ booking, onConfirm, onKeep, resolved }) {
 /** Before and after for a moved booking. */
 function RescheduleCard({ from, to }) {
   return (
-    <div className="popIn mt-2 w-full rounded-card border border-rally-200 bg-rally-50 p-4">
+    <div className="popIn mt-2 w-full rounded-card border border-lime-pop/25 bg-lime-pop/6 p-4">
       <div className="flex items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lime-pop text-xs font-bold text-night">↻</span>
         <p className="text-sm font-bold text-ink">Booking moved</p>
@@ -122,7 +125,7 @@ function RescheduleCard({ from, to }) {
         </div>
         <div className="flex justify-between gap-3 pt-1">
           <span className="text-muted">New reference</span>
-          <span className="tabularNums font-mono font-bold text-rally-700">{to.ref}</span>
+          <span className="tabularNums font-mono font-bold text-lime-pop">{to.ref}</span>
         </div>
       </div>
     </div>
@@ -137,7 +140,7 @@ function PickBookingCard({ options, onPick }) {
         <button
           key={b.ref}
           onClick={() => onPick(b)}
-          className="flex w-full items-center justify-between gap-3 rounded-control border border-hairline bg-raised px-3 py-2 text-left text-xs transition-colors duration-150 hover:border-rally-300 hover:bg-rally-50"
+          className="slotBase slotOpen flex w-full items-center justify-between gap-3 rounded-control border border-hairline bg-raised/60 px-3 py-2 text-left text-xs"
         >
           <span className="font-semibold text-ink">{b.court}</span>
           <span className="text-muted">{formatDate(b.date)} · {formatHour(b.hour)}</span>
@@ -180,7 +183,7 @@ function KpiCard({ metric, onViewTab }) {
   const main = rows[metric] || rows.bookings;
 
   return (
-    <div className="popIn mt-2 w-full rounded-card border border-hairline bg-raised p-4">
+    <div className="popIn mt-2 w-full rounded-card border border-hairline bg-night/60 p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-faint">{main.label}</p>
       <div className="mt-1 flex items-center justify-between gap-3">
         <span className="tabularNums font-display text-2xl font-bold leading-none text-ink">{main.value}</span>
@@ -206,7 +209,7 @@ function KpiCard({ metric, onViewTab }) {
       <p className="mt-1 text-[11px] text-faint">Last 7 days · vs the week before</p>
       <button
         onClick={onViewTab}
-        className="mt-2 w-full rounded-full border border-hairline py-1.5 text-xs font-bold text-rally-700 transition-colors duration-150 hover:border-rally-300 hover:bg-rally-50"
+        className="mt-2 w-full rounded-control border border-hairline py-1.5 text-xs font-bold text-lime-pop transition-colors duration-150 hover:border-lime-pop/40 hover:bg-lime-pop/8"
       >
         Open full analytics
       </button>
@@ -220,7 +223,36 @@ const welcome = {
   role: "bot",
   text: "Hey, Coach here. I can get you on court, or read you the club numbers.",
   suggestions: ["Book a court Friday at 3pm", "How are bookings this week?", "Show revenue"],
+  at: Date.now(),
 };
+
+/** Drops the last message straight to fully revealed. */
+const finishLast = (m) => {
+  const i = m.length - 1;
+  if (!m[i]?.revealing) return m;
+  const next = [...m];
+  next[i] = { ...next[i], shown: next[i].text.length, revealing: false };
+  return next;
+};
+
+/**
+ * What Coach says it is doing while it works. Naming the actual task reads far
+ * more like a real assistant than a generic spinner, and it is honest: the
+ * label is picked from the same intent words the fallback parser keys on.
+ */
+function thinkingStatus(text) {
+  const l = text.toLowerCase();
+  if (/\b(cancel|remove|delete|drop)\b/.test(l)) return "Finding that booking";
+  if (/\b(move|reschedule|change)\b/.test(l)) return "Checking the calendar";
+  if (/\b(book|reserve|reservation|court|slot)\b/.test(l)) return "Checking availability";
+  if (/\b(revenue|occupancy|busy|busiest|peak|stats|analytics|bookings|performance)\b/.test(l)) {
+    return "Pulling the club numbers";
+  }
+  return "Thinking";
+}
+
+const timeLabel = (ts) =>
+  new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 
 export default function ChatWidget() {
   const {
@@ -238,14 +270,56 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState([welcome]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
+  const [status, setStatus] = useState("Thinking");
   const [usedFallback, setUsedFallback] = useState(false);
   const [unread, setUnread] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const [copiedIndex, setCopiedIndex] = useState(null);
   const insightShown = useRef(false);
   const scrollRef = useRef(null);
+  const inputRef = useRef(null);
+  const abortRef = useRef(null);
 
+  const last = messages[messages.length - 1];
+  const revealing = Boolean(last?.revealing);
+  const busy = typing || revealing;
+
+  /**
+   * Reveals the reply a few characters at a time. The action has already been
+   * executed by this point, so this is presentation only: it never changes what
+   * Coach did, just how the answer arrives.
+   */
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, typing, open]);
+    if (!revealing) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setMessages((m) => finishLast(m));
+      return;
+    }
+    const id = setInterval(() => {
+      setMessages((m) => {
+        const i = m.length - 1;
+        const msg = m[i];
+        if (!msg?.revealing) return m;
+        const shown = Math.min((msg.shown || 0) + 3, msg.text.length);
+        const next = [...m];
+        next[i] = { ...msg, shown, revealing: shown < msg.text.length };
+        return next;
+      });
+    }, 16);
+    return () => clearInterval(id);
+    // keyed on the flag and the message count, so ticking `shown` does not
+    // tear down and rebuild the interval on every frame
+  }, [revealing, messages.length]);
+
+  // follow the conversation only while the user is already at the bottom, so
+  // scrolling back to re-read something is not yanked away mid-reply
+  useEffect(() => {
+    if (!atBottom) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: revealing ? "auto" : "smooth" });
+  }, [messages, typing, open, atBottom, revealing]);
 
   // A pulse on the launcher invites the click that reveals Coach's opening insight.
   useEffect(() => {
@@ -273,6 +347,10 @@ export default function ChatWidget() {
           role: "bot",
           text: `Heads up, ${slot.weekdayName}s at ${slot.hourLabel} are your busiest slot right now, running ${slot.occupancyPct}% full. Want me to suggest opening an extra court then?`,
           suggestions: ["Yes, suggest a slot", "Show me the analytics"],
+          at: Date.now(),
+          // the opener types itself out too, so it reads as Coach speaking up
+          shown: 0,
+          revealing: true,
         },
       ]);
     }, 700);
@@ -488,13 +566,26 @@ export default function ChatWidget() {
     return null;
   };
 
+  /** Stops a reply in flight: aborts the request, or settles a mid-reveal message. */
+  const stop = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setTyping(false);
+    setMessages((m) => finishLast(m));
+  };
+
   const send = async (rawText) => {
     const text = (rawText ?? input).trim();
-    if (!text || typing) return;
+    if (!text || busy) return;
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "auto";
     const history = [...messages.map(({ role, text }) => ({ role, text })), { role: "user", text }];
-    setMessages((m) => [...m, { role: "user", text }]);
+    setMessages((m) => [...m, { role: "user", text, at: Date.now() }]);
+    setStatus(thinkingStatus(text));
     setTyping(true);
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     let result = handleInsightChip(text);
     if (!result) {
@@ -502,8 +593,11 @@ export default function ChatWidget() {
         if (!hasApiKey) throw new Error("noApiKey");
         // a live snapshot of the club travels with every request, so Coach
         // answers long tail analytics questions from real numbers
-        result = await askAssistant(history, getClubDigest(isSlotTaken));
-      } catch {
+        result = await askAssistant(history, getClubDigest(isSlotTaken), controller.signal);
+      } catch (err) {
+        // the user pressed stop: leave the transcript alone rather than
+        // answering a question they already withdrew
+        if (controller.signal.aborted || err?.name === "AbortError") return;
         // graceful fallback: keyword matching keeps the demo alive if the API is unavailable
         result = fallbackReply(text);
         setUsedFallback(true);
@@ -520,7 +614,10 @@ export default function ChatWidget() {
       }
     }
 
+    if (controller.signal.aborted) return;
+
     const { card, extraText, replyOverride } = runAction(result);
+    abortRef.current = null;
     setTyping(false);
     setMessages((m) => [
       ...m,
@@ -529,8 +626,22 @@ export default function ChatWidget() {
         text: (replyOverride || result.reply || "Done.") + extraText,
         card,
         suggestions: (result.suggestions || []).slice(0, 3),
+        at: Date.now(),
+        // arrives a few characters at a time; the card follows once it lands
+        shown: 0,
+        revealing: true,
       },
     ]);
+  };
+
+  const copyMessage = (index, text) => {
+    navigator.clipboard?.writeText(text).then(
+      () => {
+        setCopiedIndex(index);
+        setTimeout(() => setCopiedIndex((c) => (c === index ? null : c)), 1600);
+      },
+      () => {}
+    );
   };
 
   return (
@@ -540,8 +651,9 @@ export default function ChatWidget() {
         onClick={() => setOpen(true)}
         aria-label="Open Coach"
         aria-expanded={open}
-        // the panel carries its own close, so the launcher steps aside while open
-        className={`fixed bottom-5 right-5 z-50 h-14 w-14 items-center justify-center rounded-full bg-lime-pop text-night shadow-xl shadow-lime-pop/25 transition duration-150 hover:scale-105 hover:bg-lime-glow active:scale-95 ${
+        // the panel carries its own close, so the launcher steps aside while open.
+        // sits above the mobile tab bar; becomes a labelled pill from sm up
+        className={`fixed bottom-20 right-4 z-50 items-center gap-2.5 rounded-full bg-lime-pop py-3 pl-3 pr-3 text-night shadow-xl shadow-lime-pop/25 transition duration-150 hover:scale-105 hover:bg-lime-glow active:scale-95 sm:bottom-5 sm:right-5 sm:pr-5 ${
           open ? "hidden" : "flex"
         }`}
       >
@@ -551,26 +663,39 @@ export default function ChatWidget() {
             <span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-night bg-ok" />
           </span>
         )}
-        <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z" strokeLinejoin="round" />
-          <circle cx="9.5" cy="12" r="1" fill="currentColor" stroke="none" />
-          <circle cx="13.5" cy="12" r="1" fill="currentColor" stroke="none" />
+        <svg viewBox="0 0 24 24" className="h-8 w-8 shrink-0" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="9.6" fill="#0b0f0c" />
+          <path d="M4.4 5.8c3.6 1.6 5.5 4.2 5.5 6.2s-1.9 4.6-5.5 6.2" stroke="#bef264" strokeWidth="1.5" fill="none" />
+          <path d="M19.6 5.8c-3.6 1.6-5.5 4.2-5.5 6.2s1.9 4.6 5.5 6.2" stroke="#bef264" strokeWidth="1.5" fill="none" />
         </svg>
+        <span className="hidden text-sm font-bold uppercase tracking-wide sm:inline">Ask Coach</span>
       </button>
 
       {/* panel */}
       {open && (
         // full height sheet on phones, floating panel from tablet up
-        <div className="panelIn fixed inset-x-0 bottom-0 top-0 z-40 flex flex-col overflow-hidden border border-hairline bg-card shadow-2xl shadow-black/50 sm:inset-x-auto sm:inset-y-auto sm:bottom-24 sm:right-5 sm:top-auto sm:h-[540px] sm:max-h-[calc(100vh-8rem)] sm:w-[400px] sm:rounded-card">
-          <div className="flex items-center gap-3 border-b border-hairline bg-raised px-5 py-4 text-ink">
+        <div className="panelIn glassCard fixed inset-x-0 bottom-0 top-0 z-40 flex flex-col overflow-hidden shadow-2xl shadow-black/50 sm:inset-x-auto sm:inset-y-auto sm:bottom-24 sm:right-5 sm:top-auto sm:h-[560px] sm:max-h-[calc(100vh-8rem)] sm:w-[400px] sm:rounded-card">
+          <div className="flex items-center gap-3 border-b border-hairline bg-raised/60 px-5 py-4 text-ink">
             <CoachAvatar />
             <div className="flex-1">
               <p className="font-display text-base font-bold uppercase tracking-wide leading-none">Coach</p>
               <p className="mt-1 text-[11px] text-faint">
-                {usedFallback ? "Offline mode · pattern matching" : hasApiKey ? "Powered by GPT" : "Demo mode"}
+                {busy
+                  ? `${status}…`
+                  : usedFallback
+                  ? "Offline mode · pattern matching"
+                  : hasApiKey
+                  ? "Online · GPT-4o mini"
+                  : "Demo mode · pattern matching"}
               </p>
             </div>
-            <span className="h-2 w-2 rounded-full bg-ok" aria-hidden="true" />
+            {/* the dot tells the truth about the connection rather than always reading green */}
+            <span
+              className={`h-2 w-2 rounded-full ${
+                busy ? "animate-pulse bg-lime-pop" : usedFallback || !hasApiKey ? "bg-warn" : "bg-ok"
+              }`}
+              aria-hidden="true"
+            />
             {/* the sheet covers the launcher on phones, so the panel owns its own close */}
             <button
               onClick={() => setOpen(false)}
@@ -583,7 +708,14 @@ export default function ChatWidget() {
             </button>
           </div>
 
-          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+          <div
+            ref={scrollRef}
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 60);
+            }}
+            className="flex-1 space-y-3 overflow-y-auto px-4 py-4"
+          >
             {messages.map((m, i) => {
               // consecutive bot messages share one avatar and sit closer together
               const groupedWithPrevious = m.role === "bot" && messages[i - 1]?.role === "bot";
@@ -600,24 +732,48 @@ export default function ChatWidget() {
                     ) : (
                       <CoachAvatar className="h-7 w-7" />
                     ))}
-                  <div className={m.role === "user" ? "max-w-[85%]" : "min-w-0 flex-1"}>
+                  <div className={`group/msg ${m.role === "user" ? "max-w-[85%]" : "min-w-0 flex-1"}`}>
                     <div
-                      className={`slideUp rounded-card px-4 py-2.5 text-sm leading-relaxed ${
+                      className={`slideUp whitespace-pre-wrap rounded-card px-4 py-2.5 text-sm leading-relaxed ${
                         m.role === "user"
                           ? "rounded-br-sm bg-lime-pop font-medium text-night"
-                          : "rounded-bl-sm bg-raised text-ink"
+                          : "rounded-bl-sm border border-hairline bg-raised/70 text-ink"
                       }`}
                     >
-                      {m.text}
+                      {m.revealing ? m.text.slice(0, m.shown || 0) : m.text}
+                      {m.revealing && (
+                        // the caret marks the reply as still arriving
+                        <span className="ml-0.5 inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-lime-pop" aria-hidden="true" />
+                      )}
                     </div>
 
-                    {m.card?.type === "booking" && (
+                    {/* time, and a copy action that appears on hover or focus */}
+                    <div
+                      className={`mt-1 flex items-center gap-2 px-1 text-[10px] text-faint ${
+                        m.role === "user" ? "justify-end" : "justify-start"
+                      }`}
+                    >
+                      {m.at && <span className="tabularNums">{timeLabel(m.at)}</span>}
+                      {m.role === "bot" && !m.revealing && (
+                        <button
+                          onClick={() => copyMessage(i, m.text)}
+                          aria-label="Copy message"
+                          className="rounded px-1 font-semibold opacity-0 transition-opacity duration-150 hover:text-ink focus-visible:opacity-100 group-hover/msg:opacity-100"
+                        >
+                          {copiedIndex === i ? "Copied" : "Copy"}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* cards wait for the sentence to finish, so the reply reads
+                        before the supporting detail lands */}
+                    {!m.revealing && m.card?.type === "booking" && (
                       <BookingCard booking={m.card.booking} onViewTab={() => setActiveTab("booking")} />
                     )}
-                    {m.card?.type === "kpi" && (
+                    {!m.revealing && m.card?.type === "kpi" && (
                       <KpiCard metric={m.card.metric} onViewTab={() => setActiveTab("analytics")} />
                     )}
-                    {m.card?.type === "cancel" && (
+                    {!m.revealing && m.card?.type === "cancel" && (
                       <CancelCard
                         booking={m.card.booking}
                         resolved={m.card.resolved}
@@ -625,25 +781,25 @@ export default function ChatWidget() {
                         onKeep={() => resolveCancel(i, m.card.booking, false)}
                       />
                     )}
-                    {m.card?.type === "pick" && (
+                    {!m.revealing && m.card?.type === "pick" && (
                       <PickBookingCard options={m.card.options} onPick={(b) => pickBooking(i, b)} />
                     )}
-                    {m.card?.type === "reschedule" && (
+                    {!m.revealing && m.card?.type === "reschedule" && (
                       <RescheduleCard from={m.card.from} to={m.card.to} />
                     )}
-                    {m.followUp && (
-                      <div className="slideUp mt-2 rounded-card rounded-bl-sm bg-raised px-4 py-2.5 text-sm leading-relaxed text-ink">
+                    {!m.revealing && m.followUp && (
+                      <div className="slideUp mt-2 rounded-card rounded-bl-sm border border-hairline bg-raised/70 px-4 py-2.5 text-sm leading-relaxed text-ink">
                         {m.followUp}
                       </div>
                     )}
 
-                    {m.role === "bot" && i === messages.length - 1 && !typing && m.suggestions?.length > 0 && (
+                    {m.role === "bot" && i === messages.length - 1 && !busy && m.suggestions?.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {m.suggestions.map((s) => (
                           <button
                             key={s}
                             onClick={() => send(s)}
-                            className="rounded-full border border-hairline bg-card px-3 py-1 text-xs font-semibold text-rally-700 transition-colors duration-150 hover:border-rally-300 hover:bg-rally-50"
+                            className="rounded-full border border-lime-pop/25 bg-lime-pop/6 px-3 py-1 text-xs font-semibold text-lime-pop transition-colors duration-150 hover:border-lime-pop/50 hover:bg-lime-pop/12"
                           >
                             {s}
                           </button>
@@ -657,42 +813,101 @@ export default function ChatWidget() {
             {typing && (
               <div className="mt-3 flex justify-start gap-2">
                 <CoachAvatar className="h-7 w-7" />
-                <div className="flex items-center gap-2 rounded-card rounded-bl-sm bg-raised px-4 py-3">
+                <div className="flex items-center gap-2 rounded-card rounded-bl-sm border border-hairline bg-raised/70 px-4 py-3">
                   <span className="flex items-center gap-1.5">
                     <span className="typingDot" />
                     <span className="typingDot" />
                     <span className="typingDot" />
                   </span>
-                  <span className="text-xs text-faint">Coach is thinking</span>
+                  {/* names the task rather than showing a generic spinner */}
+                  <span className="text-xs text-faint">{status}</span>
                 </div>
               </div>
             )}
           </div>
+
+          {/* jump back to the newest message after scrolling up the transcript */}
+          {!atBottom && (
+            <button
+              onClick={() => {
+                setAtBottom(true);
+                scrollRef.current?.scrollTo({
+                  top: scrollRef.current.scrollHeight,
+                  behavior: "smooth",
+                });
+              }}
+              className="slideUp absolute bottom-24 left-1/2 z-10 -translate-x-1/2 rounded-full border border-hairline bg-raised px-3 py-1.5 text-[11px] font-semibold text-ink shadow-lg"
+            >
+              Jump to latest ↓
+            </button>
+          )}
+
+          {usedFallback && (
+            <div className="flex items-center gap-2 border-t border-warn/20 bg-warn/8 px-4 py-2 text-[11px] text-warn">
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 8.5v4.5" strokeLinecap="round" />
+                <circle cx="12" cy="16.4" r="0.6" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="9" />
+              </svg>
+              Coach lost its connection and is answering from its offline playbook.
+            </div>
+          )}
 
           <form
             onSubmit={(e) => {
               e.preventDefault();
               send();
             }}
-            className="flex items-center gap-2 border-t border-hairline px-3 py-3"
+            className="flex items-end gap-2 border-t border-hairline px-3 py-3"
           >
-            <input
+            <textarea
+              ref={inputRef}
+              rows={1}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => {
+                setInput(e.target.value);
+                // grow with the message, up to a few lines, then scroll
+                e.target.style.height = "auto";
+                e.target.style.height = `${Math.min(e.target.scrollHeight, 96)}px`;
+              }}
+              onKeyDown={(e) => {
+                // Enter sends, Shift+Enter starts a new line, the convention
+                // every messaging app uses
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
               placeholder="Try: book a court Friday at 3pm"
               aria-label="Message Coach"
-              className="flex-1 rounded-full border border-hairline bg-raised px-4 py-2.5 text-sm text-ink placeholder:text-faint outline-none transition-colors duration-150 focus:border-rally-500"
+              className="max-h-24 flex-1 resize-none rounded-card border border-hairline bg-night/60 px-4 py-2.5 text-sm leading-relaxed text-ink placeholder:text-faint outline-none transition-colors duration-150 focus:border-lime-pop"
             />
-            <button
-              type="submit"
-              disabled={!input.trim() || typing}
-              aria-label="Send message"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-lime-pop text-night transition duration-150 enabled:hover:bg-lime-glow enabled:active:scale-95 disabled:opacity-40"
-            >
-              <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 translate-x-px" fill="currentColor">
-                <path d="M3.4 20.4l17.4-7.5a1 1 0 000-1.8L3.4 3.6a1 1 0 00-1.4 1.1L3.5 11 13 12 3.5 13l-1.5 6.3a1 1 0 001.4 1.1z" />
-              </svg>
-            </button>
+            {busy ? (
+              <button
+                type="button"
+                onClick={stop}
+                // two different jobs: abort the request while waiting on the
+                // model, or skip the reveal once the reply is already here
+                aria-label={typing ? "Stop generating" : "Show full reply"}
+                title={typing ? "Stop" : "Skip"}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-hairline bg-raised text-ink transition duration-150 hover:border-bad/50 hover:text-bad active:scale-95"
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
+                  <rect x="5" y="5" width="14" height="14" rx="2.5" />
+                </svg>
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                aria-label="Send message"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-lime-pop text-night transition duration-150 enabled:hover:bg-lime-glow enabled:active:scale-95 disabled:opacity-40"
+              >
+                <svg viewBox="0 0 24 24" className="h-4.5 w-4.5 translate-x-px" fill="currentColor">
+                  <path d="M3.4 20.4l17.4-7.5a1 1 0 000-1.8L3.4 3.6a1 1 0 00-1.4 1.1L3.5 11 13 12 3.5 13l-1.5 6.3a1 1 0 001.4 1.1z" />
+                </svg>
+              </button>
+            )}
           </form>
         </div>
       )}

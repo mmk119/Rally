@@ -12,7 +12,8 @@ export default function UndoToast() {
     <div
       role="status"
       aria-live="polite"
-      className="slideUp fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-hairline bg-raised py-2 pl-4 pr-2 shadow-2xl shadow-black/60"
+      // sits above the mobile tab bar, drops to the corner-adjacent spot on desktop
+      className="slideUp fixed bottom-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full border border-hairline bg-raised py-2 pl-4 pr-2 shadow-2xl shadow-black/60 md:bottom-6"
     >
       <span className="text-sm text-ink">{toast.message}</span>
       {toast.actionLabel && (

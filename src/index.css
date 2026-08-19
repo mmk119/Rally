@@ -58,6 +58,9 @@
   /* one radius language across cards, inputs, buttons and pills */
   --radius-card: 16px;
   --radius-control: 12px;
+
+  /* the arena floor: one step below night, for the rail and page gutters */
+  --color-pit: #080b09;
 }
 
 body {
@@ -66,6 +69,116 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
 }
+
+/*
+  Cinematic backdrop.
+
+  The mood reference is a lit ball against a dark arena with bokeh behind it, so
+  the page sits on two soft lime pools plus a faint court-line grid rather than
+  flat black. Pure CSS: no image request, and it stays crisp at any size.
+*/
+.arenaBackdrop {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60rem 40rem at 78% -10%, rgba(190, 242, 100, 0.09), transparent 60%),
+    radial-gradient(45rem 35rem at 8% 8%, rgba(120, 190, 130, 0.05), transparent 62%),
+    radial-gradient(35rem 30rem at 50% 115%, rgba(190, 242, 100, 0.05), transparent 60%);
+}
+/* court lines, barely there, to imply a surface under the content */
+.arenaBackdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(190, 242, 100, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(190, 242, 100, 0.028) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(70% 60% at 50% 0%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 0%, #000 20%, transparent 78%);
+}
+
+/*
+  The photographic half of the backdrop: a rim-lit padel ball shot on pure
+  black. `mix-blend-mode: screen` makes the black pixels contribute nothing, so
+  what lands on the page is just the lit rim, sitting off the top-right corner
+  like a light source. The mask keeps it away from the content column, and it
+  stays fixed so scrolling the dashboard moves content past a stationary light.
+*/
+.arenaPhoto {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+  background-position: right -13rem top -11rem;
+  background-size: 30rem auto;
+  mix-blend-mode: screen;
+  /* low enough that it reads as a light in the corner and never as a photo
+     competing with the header controls that sit in front of it */
+  opacity: 0.22;
+  mask-image: radial-gradient(46% 42% at 94% 2%, #000 10%, transparent 70%);
+  -webkit-mask-image: radial-gradient(46% 42% at 94% 2%, #000 10%, transparent 70%);
+}
+@media (max-width: 767px) {
+  /* smaller and pushed further out, so it never competes with the content */
+  .arenaPhoto {
+    background-size: 26rem auto;
+    background-position: right -9rem top -6rem;
+    opacity: 0.4;
+  }
+}
+
+/* Cards read as glass over the backdrop instead of solid blocks. */
+.glassCard {
+  background: color-mix(in srgb, var(--color-card) 82%, transparent);
+  border: 1px solid var(--color-hairline);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* The one accent glow, reserved for the selected slot and primary CTAs. */
+.limeGlow {
+  box-shadow: 0 4px 20px rgba(190, 242, 100, 0.25);
+}
+
+/*
+  Slot and court states, lifted from the design explorations: available lifts
+  toward the cursor, selected fills lime and glows, full is dashed and inert so
+  it reads as unavailable before you even try to click it.
+*/
+.slotBase {
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.18s ease,
+    background-color 0.18s ease, box-shadow 0.18s ease;
+}
+.slotOpen:hover {
+  border-color: var(--color-lime-pop);
+  box-shadow: 0 0 15px rgba(190, 242, 100, 0.15);
+  transform: translateY(-2px);
+}
+.slotFull {
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+/* Horizontal day picker: fade the trailing edge so the scroll is legible. */
+/* Fourteen days never fit at any width here, so the fade always applies. */
+.dayStrip {
+  mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent 100%);
+}
+
+/* thin, dark scrollbars so overflow areas do not break the surface */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-hairline) transparent;
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-hairline); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2e3833; }
 
 /* Barlow Condensed sets numerals and headings; keep figures tabular so
    counting numbers and table columns never jitter as digits change. */
@@ -167,9 +280,38 @@ body {
   animation: flashRow 1.5s ease-out both, landRow 0.28s ease-out both;
 }
 
+/*
+  Section entrance. Cards rise a few pixels in sequence so the dashboard
+  assembles itself once on arrival rather than appearing all at once.
+  Stagger comes from an inline --d delay on each card.
+*/
+@keyframes riseIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.riseIn {
+  animation: riseIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* the active rail item's lime edge slides into place instead of blinking on */
+@keyframes railMark {
+  from { transform: scaleY(0.2); opacity: 0; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+.railMark { animation: railMark 0.24s ease-out both; }
+
+/* a slow drift on the backdrop pools, just enough to feel alive */
+@keyframes arenaDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.5%, 1.5%, 0) scale(1.04); }
+}
+.arenaBackdrop { animation: arenaDrift 24s ease-in-out infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .popIn, .slideUp, .flashRow, .checkCircle, .checkMark, .typingDot, .skeleton,
-  .panelIn, .pulseRing {
+  .panelIn, .pulseRing, .riseIn, .railMark, .arenaBackdrop {
     animation: none !important;
   }
+  .slotBase, .slotOpen:hover { transition: none; transform: none; }
 }

@@ -3,6 +3,14 @@ import { courts, openHour, closeHour, formatHour } from "../../data/mockData";
 import { useApp } from "../../store";
 import { useCountUp } from "../../lib/useCountUp";
 
+/* Metric glyphs, one per card, so the row scans as icons before it scans as text. */
+const icons = {
+  bookings: <path d="M3 5.5A2.5 2.5 0 015.5 3h13A2.5 2.5 0 0121 5.5v13a2.5 2.5 0 01-2.5 2.5h-13A2.5 2.5 0 013 18.5v-13zM3 9h18M8 3v4M16 3v4" strokeLinecap="round" />,
+  revenue: <><path d="M12 2v20" strokeLinecap="round" /><path d="M17 6.5c0-1.9-2.2-3-5-3s-5 1.1-5 3 2.2 2.7 5 3.2 5 1.3 5 3.3-2.2 3.2-5 3.2-5-1.3-5-3.2" strokeLinecap="round" /></>,
+  occupancy: <><circle cx="12" cy="12" r="9" /><path d="M12 3a9 9 0 019 9h-9V3z" fill="currentColor" stroke="none" opacity="0.35" /></>,
+  peak: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5.2l3.4 2" strokeLinecap="round" /></>,
+};
+
 function Trend({ delta }) {
   const up = delta >= 0;
   return (
@@ -19,15 +27,44 @@ function Trend({ delta }) {
   );
 }
 
-function Card({ label, value, delta, hint }) {
+/**
+ * A KPI tile. The lime hairline across the top only lights up on hover, so the
+ * row stays calm at rest and still rewards a pass of the cursor.
+ * `meter` (0..1) draws the fill bar used by occupancy.
+ */
+function Card({ label, value, delta, hint, icon, meter }) {
   return (
-    <div className="group rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20 transition-colors duration-150 hover:border-slate-300">
-      <p className="text-xs font-semibold uppercase tracking-wide text-faint">{label}</p>
-      <div className="mt-2 flex items-baseline justify-between gap-2">
-        <span className="tabularNums font-display text-3xl font-bold leading-none text-ink">{value}</span>
+    <div className="glassCard group relative overflow-hidden rounded-card p-5 shadow-lg shadow-black/20 transition-colors duration-200 hover:border-rally-300">
+      <span
+        className="absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-lime-pop to-transparent opacity-0 transition-all duration-300 group-hover:scale-x-100 group-hover:opacity-70"
+        aria-hidden="true"
+      />
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-faint">{label}</p>
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-control bg-raised/70 text-faint transition-colors duration-200 group-hover:text-lime-pop">
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            {icon}
+          </svg>
+        </span>
+      </div>
+
+      <div className="mt-3 flex items-baseline gap-2.5">
+        <span className="tabularNums font-display text-4xl font-bold leading-none tracking-tight text-ink">
+          {value}
+        </span>
         {delta !== null && <Trend delta={delta} />}
       </div>
-      <p className="mt-2 text-xs text-muted">{hint}</p>
+
+      {meter !== undefined && (
+        <div className="mt-3 h-1 overflow-hidden rounded-full bg-raised">
+          <div
+            className="h-full rounded-full bg-lime-pop transition-[width] duration-700 ease-out"
+            style={{ width: `${Math.min(Math.max(meter, 0), 1) * 100}%` }}
+          />
+        </div>
+      )}
+
+      <p className={`text-xs text-muted ${meter !== undefined ? "mt-2" : "mt-3"}`}>{hint}</p>
     </div>
   );
 }
@@ -87,30 +124,35 @@ export default function KpiCards({ visible, previous }) {
   const peakCountUp = useCountUp(stats.peakCount);
 
   return (
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <Card
         label="Bookings"
         value={Math.round(bookingsUp).toLocaleString()}
         delta={stats.bookingsDelta}
         hint="vs previous period"
+        icon={icons.bookings}
       />
       <Card
         label="Revenue"
         value={`$${Math.round(revenueUp).toLocaleString()}`}
         delta={stats.revenueDelta}
         hint="vs previous period"
+        icon={icons.revenue}
       />
       <Card
         label="Occupancy"
         value={`${occupancyUp.toFixed(0)}%`}
         delta={stats.occupancyDelta}
         hint="of all court hours"
+        icon={icons.occupancy}
+        meter={stats.occupancy / 100}
       />
       <Card
         label="Peak hour"
         value={formatHour(stats.peak)}
         delta={stats.peakDelta}
         hint={`${Math.round(peakCountUp)} bookings at this hour`}
+        icon={icons.peak}
       />
     </div>
   );

@@ -86,10 +86,15 @@ export function coachConfirmation(courtName, dayLabel, hourLabel) {
   return `Booked! ${courtName}, ${dayLabel} ${hourLabel}. ${closer}`;
 }
 
-export async function askAssistant(history, digest = "") {
+/**
+ * `signal` lets the widget abort a request the user stopped, so a cancelled
+ * reply never lands in the transcript after the fact.
+ */
+export async function askAssistant(history, digest = "", signal) {
   if (!openaiKey) throw new Error("noApiKey");
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
+    signal,
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${openaiKey}`,

@@ -20,6 +20,13 @@ function shortHour(hour) {
   return `${h}${hour < 12 ? "am" : "pm"}`;
 }
 
+/** Day parts, used to band the columns so 8am and 8pm are never confused. */
+function dayPart(hour) {
+  if (hour < 12) return "Morning";
+  if (hour < 17) return "Afternoon";
+  return "Evening";
+}
+
 export default function OccupancyHeatmap({ range }) {
   const { isSlotTaken, demoMode, heatmapFocus } = useApp();
 
@@ -29,11 +36,23 @@ export default function OccupancyHeatmap({ range }) {
     [range, isSlotTaken, demoMode]
   );
 
+  // column spans for the day-part band above the grid
+  const bands = useMemo(() => {
+    const out = [];
+    for (const h of hours) {
+      const name = dayPart(h);
+      const last = out[out.length - 1];
+      if (last && last.name === name) last.span++;
+      else out.push({ name, span: 1 });
+    }
+    return out;
+  }, [hours]);
+
   return (
-    <div className="rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20">
+    <div className="glassCard rounded-card p-5 shadow-lg shadow-black/20">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">
+          <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">
             Occupancy heatmap
           </h3>
           <p className="text-xs text-faint">
@@ -53,16 +72,28 @@ export default function OccupancyHeatmap({ range }) {
 
       {/* narrow screens scroll the grid rather than squeezing or overflowing the page */}
       <div className="overflow-x-auto">
-        <div className="min-w-[640px]">
+        <div className="min-w-[680px]">
           <div
             className="grid gap-1"
-            style={{ gridTemplateColumns: `64px repeat(${hours.length}, minmax(0, 1fr))` }}
+            style={{ gridTemplateColumns: `72px repeat(${hours.length}, minmax(0, 1fr))` }}
           >
+            {/* day-part band: morning / afternoon / evening across the columns */}
+            <span />
+            {bands.map((b) => (
+              <span
+                key={b.name}
+                style={{ gridColumn: `span ${b.span}` }}
+                className="mb-1 border-b border-hairline pb-1 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-faint"
+              >
+                {b.name}
+              </span>
+            ))}
+
             <span />
             {hours.map((h) => (
               <span
                 key={h}
-                className={`pb-1 text-center text-[10px] font-medium transition-colors duration-150 ${
+                className={`pb-1.5 text-center text-[10px] font-medium transition-colors duration-150 ${
                   heatmapFocus === h ? "font-bold text-lime-pop" : "text-muted"
                 }`}
               >
@@ -88,12 +119,16 @@ function Row({ row, focusHour }) {
         <div
           key={cell.hour}
           title={`${row.court} · ${shortHour(cell.hour)} · ${Math.round(cell.ratio * 100)}% booked`}
-          className={`group relative h-7 rounded-[4px] transition-all duration-150 hover:scale-[1.12] ${
+          className={`group relative h-8 rounded-md transition-all duration-150 hover:z-10 hover:scale-[1.14] ${
             focusHour === cell.hour ? "ring-2 ring-lime-pop ring-offset-2 ring-offset-card" : ""
           } ${focusHour != null && focusHour !== cell.hour ? "opacity-40" : ""}`}
-          style={{ background: cellColor(cell.ratio) }}
+          style={{
+            background: cellColor(cell.ratio),
+            // the hottest cells throw a little light, so pressure points are findable at a glance
+            boxShadow: cell.ratio > 0.75 ? `0 0 14px rgba(190, 242, 100, ${(cell.ratio - 0.75) * 0.9})` : "none",
+          }}
         >
-          <span className="pointer-events-none absolute -top-8 left-1/2 z-10 hidden -translate-x-1/2 whitespace-nowrap rounded-control border border-hairline bg-raised px-2 py-1 text-[11px] text-ink shadow-lg group-hover:block">
+          <span className="pointer-events-none absolute -top-8 left-1/2 z-20 hidden -translate-x-1/2 whitespace-nowrap rounded-control border border-hairline bg-raised px-2 py-1 text-[11px] font-semibold text-ink shadow-lg group-hover:block">
             {Math.round(cell.ratio * 100)}%
           </span>
         </div>

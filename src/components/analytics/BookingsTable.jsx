@@ -2,17 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useApp } from "../../store";
 import { formatDate, formatHour } from "../../data/mockData";
 
-// Muted status colors so nothing competes with the lime accent.
+// Muted status colors so nothing competes with the lime accent. The thin
+// matching border gives each pill an edge, the way the design explorations
+// outline their status chips rather than relying on fill alone.
 const statusStyles = {
-  Confirmed: { pill: "bg-ok/12 text-ok", dot: "bg-ok" },
-  Pending: { pill: "bg-warn/12 text-warn", dot: "bg-warn" },
-  Cancelled: { pill: "bg-slate-100 text-faint", dot: "bg-faint" },
+  Confirmed: { pill: "border-ok/25 bg-ok/12 text-ok", dot: "bg-ok" },
+  Pending: { pill: "border-warn/25 bg-warn/12 text-warn", dot: "bg-warn" },
+  Cancelled: { pill: "border-hairline bg-slate-100 text-faint", dot: "bg-faint" },
 };
 
 function StatusPill({ status }) {
   const s = statusStyles[status] || statusStyles.Cancelled;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${s.pill}`}>
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide ${s.pill}`}
+    >
       <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
       {status}
     </span>
@@ -94,28 +98,28 @@ export default function BookingsTable({ rangeKey }) {
     setSort((s) => ({ key, dir: s.key === key && s.dir === "desc" ? "asc" : "desc" }));
 
   return (
-    <div className="rounded-card border border-hairline bg-card shadow-lg shadow-black/20">
+    <div className="glassCard overflow-hidden rounded-card shadow-lg shadow-black/20">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
         <div>
-          <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">
+          <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">
             Recent bookings
           </h3>
-          <p className="text-xs text-faint">Click a column to sort</p>
+          <p className="text-xs text-faint">Click a column to sort · hover a row to cancel</p>
         </div>
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search customer, court, status…"
           aria-label="Search bookings"
-          className="w-56 rounded-full border border-hairline bg-raised px-4 py-1.5 text-sm text-ink placeholder:text-faint outline-none transition-colors duration-150 focus:border-rally-500"
+          className="w-56 rounded-full border border-hairline bg-night/60 px-4 py-2 text-sm text-ink placeholder:text-faint outline-none transition-colors duration-150 focus:border-lime-pop"
         />
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
-            <tr className="border-b border-hairline text-xs uppercase tracking-wide text-faint">
+            <tr className="border-b border-hairline bg-raised/40 text-[11px] uppercase tracking-[0.14em] text-faint">
               {columns.map((c) => (
-                <th key={c.key} className="px-4 py-3 font-semibold">
+                <th key={c.key} className="px-4 py-3 font-bold">
                   <button
                     onClick={() => toggleSort(c.key)}
                     aria-sort={sort.key === c.key ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
@@ -205,13 +209,17 @@ export default function BookingsTable({ rangeKey }) {
                     r.ref === lastBookingRef ? "flashRow" : ""
                   } ${r.status === "Cancelled" ? "opacity-60" : ""}`}
                 >
-                  <td className="tabularNums px-4 py-3 font-mono text-xs font-semibold text-faint">{r.ref}</td>
-                  <td className="px-4 py-3 font-medium text-ink">{r.customer}</td>
+                  <td className="px-4 py-3">
+                    <span className="tabularNums rounded-md border border-hairline bg-raised/60 px-2 py-1 font-mono text-[11px] font-semibold text-muted">
+                      {r.ref}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-ink">{r.customer}</td>
                   <td className="px-4 py-3 text-slate-600">{r.court}</td>
                   <td className={`px-4 py-3 text-muted ${r.status === "Cancelled" ? "line-through" : ""}`}>
                     {formatDate(r.date)} · {formatHour(r.hour)}
                   </td>
-                  <td className="tabularNums px-4 py-3 font-medium text-ink">${r.price}</td>
+                  <td className="tabularNums px-4 py-3 font-display text-base font-bold text-ink">${r.price}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-between gap-2">
                       <StatusPill status={r.status} />

@@ -1,8 +1,72 @@
 import { useMemo, useState } from "react";
+// Ball in a dark arena with bokeh: the photographic corner on the summary card,
+// the detail the Stitch booking exploration uses to lift it above a plain panel.
+import courtLights from "../../../pics/5.png";
 import { useApp } from "../../store";
 import { courts, openHour, closeHour, toDateStr, formatDate, formatHour } from "../../data/mockData";
 
 const steps = ["Date & time", "Court", "Details", "Confirm"];
+
+/* Day parts split the 14 open hours into three readable blocks instead of one
+   long wall of buttons, and give each block an icon you can aim for. */
+const dayParts = [
+  {
+    name: "Morning",
+    match: (h) => h < 12,
+    icon: <><circle cx="12" cy="13" r="3.4" /><path d="M12 6.5V5M12 21v-1.2M6.7 7.7l-.9-.9M18.2 19.2l-.9-.9M4.5 13H3M21 13h-1.5M6.7 18.3l-.9.9M18.2 6.8l-.9.9" strokeLinecap="round" /></>,
+  },
+  {
+    name: "Afternoon",
+    match: (h) => h >= 12 && h < 17,
+    icon: <><circle cx="12" cy="12" r="4.2" /><path d="M12 3.5V2M12 22v-1.5M5.2 5.2l-1-1M19.8 19.8l-1-1M3.5 12H2M22 12h-1.5M5.2 18.8l-1 1M19.8 4.2l-1 1" strokeLinecap="round" /></>,
+  },
+  {
+    name: "Evening",
+    match: (h) => h >= 17,
+    icon: <path d="M20 14.5A8.2 8.2 0 019.6 4a8.5 8.5 0 108.4 14.3 8.3 8.3 0 002-3.8z" strokeLinejoin="round" />,
+  },
+];
+
+function Glyph({ children, className = "h-4 w-4" }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      {children}
+    </svg>
+  );
+}
+
+/** Racket medallion used on the court cards and in the summary. */
+function CourtMark({ active }) {
+  return (
+    <span
+      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
+        active ? "border-lime-pop bg-lime-pop/12 text-lime-pop" : "border-hairline bg-raised/60 text-faint"
+      }`}
+    >
+      <Glyph className="h-5 w-5">
+        <ellipse cx="12" cy="9" rx="5.5" ry="6.5" />
+        <path d="M12 15.5V21M9.6 21h4.8" strokeLinecap="round" />
+        <path d="M8 6.5c2.5 1.4 5.5 1.4 8 0M7.4 9.5c3 1.6 6.2 1.6 9.2 0" opacity="0.55" />
+      </Glyph>
+    </span>
+  );
+}
+
+function StepBadge({ n, active, done }) {
+  return (
+    <span
+      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors duration-200 ${
+        done
+          ? "bg-lime-pop text-night"
+          : active
+          ? "bg-lime-pop/12 text-lime-pop ring-2 ring-lime-pop"
+          : "bg-raised text-faint"
+      }`}
+    >
+      {done ? "✓" : n}
+    </span>
+  );
+}
 
 function Stepper({ current }) {
   return (
@@ -10,25 +74,13 @@ function Stepper({ current }) {
     <ol className="flex items-center gap-1.5 text-xs font-semibold sm:gap-2">
       {steps.map((label, i) => (
         <li key={label} className="flex items-center gap-1.5 sm:gap-2">
+          <StepBadge n={i + 1} active={i === current} done={i < current} />
           <span
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
-              i < current
-                ? "bg-lime-pop text-night"
-                : i === current
-                ? "bg-rally-100 text-rally-800 ring-2 ring-rally-500"
-                : "bg-slate-100 text-faint"
-            }`}
-          >
-            {i < current ? "✓" : i + 1}
-          </span>
-          <span
-            className={`${i === current ? "text-ink" : "text-faint"} ${
-              i === current ? "whitespace-nowrap" : "hidden sm:inline"
-            }`}
+            className={`${i === current ? "whitespace-nowrap text-ink" : "hidden text-faint sm:inline"}`}
           >
             {label}
           </span>
-          {i < steps.length - 1 && <span className="h-px w-3 bg-hairline sm:w-6" />}
+          {i < steps.length - 1 && <span className="h-px w-3 bg-hairline sm:w-5" />}
         </li>
       ))}
     </ol>
@@ -37,29 +89,132 @@ function Stepper({ current }) {
 
 function SuccessScreen({ booking, onDone }) {
   return (
-    <div className="popIn mx-auto max-w-md rounded-card border border-hairline bg-card p-8 text-center shadow-lg shadow-black/20">
-      <svg viewBox="0 0 100 100" className="mx-auto h-24 w-24">
+    <div className="popIn glassCard relative mx-auto max-w-md overflow-hidden rounded-card p-8 text-center shadow-2xl shadow-black/40">
+      {/* a wash of accent behind the check, so the finish feels lit rather than flat */}
+      <span
+        className="pointer-events-none absolute inset-x-0 -top-24 h-56 bg-[radial-gradient(closest-side,rgba(190,242,100,0.22),transparent)]"
+        aria-hidden="true"
+      />
+      <svg viewBox="0 0 100 100" className="relative mx-auto h-24 w-24">
         <circle cx="50" cy="50" r="46" fill="none" stroke="#a3e635" strokeWidth="5" className="checkCircle" />
         <path d="M32 52l13 13 24-28" fill="none" stroke="#bef264" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" className="checkMark" />
       </svg>
-      <h2 className="mt-4 font-display text-2xl font-bold uppercase tracking-wide text-ink">
+      <h2 className="relative mt-4 font-display text-3xl font-bold uppercase tracking-tight text-ink">
         You're on the court
       </h2>
-      <p className="mt-1 text-sm text-muted">
+      <p className="relative mt-1 text-sm text-muted">
         {booking.court} · {formatDate(booking.date)} at {formatHour(booking.hour)}
       </p>
-      <div className="mt-5 rounded-card bg-rally-50 px-4 py-3">
-        <p className="text-xs font-medium uppercase tracking-wide text-rally-700">Booking reference</p>
-        <p className="tabularNums font-mono text-lg font-bold text-rally-800">{booking.ref}</p>
+      <div className="relative mt-5 rounded-card border border-lime-pop/25 bg-lime-pop/8 px-4 py-3">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Booking reference</p>
+        <p className="tabularNums mt-0.5 font-mono text-xl font-bold text-lime-pop">{booking.ref}</p>
       </div>
-      <p className="mt-3 text-xs text-faint">A confirmation was added to Recent bookings in Analytics.</p>
+      <p className="relative mt-3 text-xs text-faint">
+        A confirmation was added to Recent bookings in Analytics.
+      </p>
       <button
         onClick={onDone}
-        className="mt-6 w-full rounded-full bg-lime-pop py-2.5 text-sm font-bold text-night transition-colors duration-150 hover:bg-lime-glow active:scale-[0.98]"
+        className="relative mt-6 w-full rounded-control bg-lime-pop py-2.5 text-sm font-bold text-night transition duration-150 hover:bg-lime-glow hover:shadow-[0_0_20px_rgba(190,242,100,0.35)] active:scale-[0.98]"
       >
         Book another court
       </button>
     </div>
+  );
+}
+
+/**
+ * The live summary rail. Every choice lands here as it is made, so the booking
+ * is reviewable at every step instead of only on the final screen.
+ */
+function SummaryRail({ date, hour, court, name, players, notes, step }) {
+  const rows = [
+    { label: "Players", value: players ? `${players} players` : null },
+    { label: "Booked for", value: name.trim() || null },
+    { label: "Notes", value: notes.trim() || null },
+  ].filter((r) => r.value);
+
+  return (
+    <aside className="glassCard sticky top-6 overflow-hidden rounded-card shadow-lg shadow-black/20">
+      <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
+        <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">Summary</h3>
+        <Glyph className="h-4 w-4 text-faint">
+          <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" strokeLinejoin="round" />
+          <path d="M9.5 8h5M9.5 12h5" strokeLinecap="round" />
+        </Glyph>
+      </div>
+
+      {/* date + time header, with the photographic corner the design uses for its hero */}
+      <div className="relative overflow-hidden px-5 py-4">
+        <span
+          className="pointer-events-none absolute inset-y-0 right-0 w-2/3 bg-cover bg-center opacity-45 mix-blend-screen"
+          style={{ backgroundImage: `url(${courtLights})` }}
+          aria-hidden="true"
+        />
+        {/* scrim so the DATE and TIME values keep their contrast over the photo */}
+        <span
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-card via-card/85 to-transparent"
+          aria-hidden="true"
+        />
+        <span
+          className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-lime-pop/12 blur-2xl"
+          aria-hidden="true"
+        />
+        <div className="relative flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Date</p>
+            <p className={`mt-1 font-display text-lg font-bold ${date ? "text-ink" : "text-faint"}`}>
+              {date ? formatDate(date) : "Not set"}
+            </p>
+          </div>
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-lime-pop/80">Time</p>
+            <p className={`mt-1 font-display text-lg font-bold ${hour !== null ? "text-ink" : "text-faint"}`}>
+              {hour !== null ? formatHour(hour) : "Not set"}
+            </p>
+            {hour !== null && <p className="text-[11px] text-faint">60 mins</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-hairline px-5 py-4">
+        <div className="flex items-center gap-3">
+          <CourtMark active={Boolean(court)} />
+          <div className="min-w-0 flex-1">
+            <p className={`truncate font-semibold ${court ? "text-ink" : "text-faint"}`}>
+              {court ? court.name : "No court yet"}
+            </p>
+            <p className="text-xs text-faint">{court ? court.type : "Chosen in step 2"}</p>
+          </div>
+          {court && (
+            <span className="tabularNums font-display text-lg font-bold text-ink">${court.price}</span>
+          )}
+        </div>
+      </div>
+
+      {rows.length > 0 && (
+        <dl className="space-y-2 border-t border-hairline px-5 py-4 text-sm">
+          {rows.map((r) => (
+            <div key={r.label} className="flex justify-between gap-3">
+              <dt className="text-faint">{r.label}</dt>
+              <dd className="truncate text-right font-medium text-ink">{r.value}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+
+      <div className="flex items-center justify-between border-t border-hairline bg-raised/40 px-5 py-4">
+        <span className="text-xs font-semibold uppercase tracking-wide text-faint">Total</span>
+        <span className="tabularNums font-display text-2xl font-bold text-lime-pop">
+          {court ? `$${court.price}` : "—"}
+        </span>
+      </div>
+
+      {step < 3 && (
+        <p className="px-5 pb-4 text-[11px] leading-relaxed text-faint">
+          Nothing is charged in this prototype. Bookings are mocked and appear instantly in Analytics.
+        </p>
+      )}
+    </aside>
   );
 }
 
@@ -85,6 +240,7 @@ export default function BookingTab() {
         str: toDateStr(d),
         weekday: d.toLocaleDateString("en-US", { weekday: "short" }),
         day: d.getDate(),
+        month: d.toLocaleDateString("en-US", { month: "short" }),
         isToday: i === 0,
       });
     }
@@ -125,268 +281,428 @@ export default function BookingTab() {
   const selectedCourt = courts.find((c) => c.id === courtId);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="space-y-5">
+      <div className="riseIn flex flex-wrap items-end justify-between gap-4 border-b border-hairline pb-5">
         <div>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-ink">Book a court</h1>
-          <p className="text-sm text-muted">Pick a slot, choose your court, and you're in.</p>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-lime-pop">
+            Step {step + 1} of {steps.length}
+          </div>
+          <h1 className="mt-1.5 font-display text-4xl font-bold uppercase leading-none tracking-tight text-ink sm:text-5xl">
+            Reserve a court
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            Pick a slot, choose your court, and you're in. Peak hours fill first.
+          </p>
         </div>
         <Stepper current={step} />
       </div>
 
-      <div className="rounded-card border border-hairline bg-card p-6 shadow-lg shadow-black/20">
-        {step === 0 && (
-          <div className="slideUp space-y-6">
-            <div>
-              <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-ink">Choose a day</h3>
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {days.map((d) => (
-                  <button
-                    key={d.str}
-                    onClick={() => {
-                      setDate(d.str);
-                      setHour(null);
-                    }}
-                    className={`flex min-w-14 flex-col items-center rounded-card border px-3 py-2.5 transition-colors duration-150 ${
-                      date === d.str
-                        ? "border-lime-pop bg-lime-pop text-night shadow shadow-lime-pop/20"
-                        : "border-hairline bg-card text-slate-600 hover:border-rally-300 hover:bg-rally-50"
-                    }`}
-                  >
-                    <span className="text-[11px] font-semibold uppercase opacity-80">{d.isToday ? "Today" : d.weekday}</span>
-                    <span className="font-display text-lg font-bold">{d.day}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">Choose a start time</h3>
-                <div className="flex items-center gap-4 text-xs text-faint">
-                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-rally-500" /> Available</span>
-                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-slate-300" /> Full</span>
+      {/* main column plus the persistent summary rail, the composition from the
+          Stitch booking exploration */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+        {/* min-w-0: grid items default to min-width:auto, which would let the
+            day strip's intrinsic width push the column past the viewport */}
+        <div className="glassCard riseIn min-w-0 rounded-card p-5 shadow-lg shadow-black/20 sm:p-6" style={{ "--d": "60ms" }}>
+          {step === 0 && (
+            <div className="slideUp space-y-7">
+              <section>
+                <div className="mb-3 flex items-center gap-2.5">
+                  <StepBadge n={1} active />
+                  <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                    Choose a day
+                  </h3>
                 </div>
-              </div>
-              {!date ? (
-                <div className="rounded-control border border-hairline bg-raised px-4 py-8 text-center">
-                  <svg viewBox="0 0 24 24" className="mx-auto h-6 w-6 text-faint" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <rect x="3" y="5" width="18" height="16" rx="2" />
-                    <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
-                  </svg>
-                  <p className="mt-2 text-sm font-semibold text-slate-700">Pick a day to see open slots</p>
-                  <p className="mt-0.5 text-xs text-muted">Fourteen days of court time, ready when you are.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-7">
-                  {hours.map((h) => {
-                    const left = courts.filter((c) => !isSlotTaken(date, h, c.id)).length;
-                    const full = left === 0;
+                {/* the strip scrolls; the mask fades the last chip out so the
+                    cut edge reads as "more days" rather than a clipped card */}
+                <div className="dayStrip flex gap-2 overflow-x-auto pb-2">
+                  {days.map((d) => {
+                    const active = date === d.str;
                     return (
                       <button
-                        key={h}
-                        disabled={full}
-                        onClick={() => setHour(h)}
-                        className={`rounded-control border px-2 py-2 text-sm font-semibold transition-colors duration-150 ${
-                          full
-                            ? "cursor-not-allowed border-hairline bg-raised text-faint line-through"
-                            : hour === h
-                            ? "border-lime-pop bg-lime-pop text-night shadow shadow-lime-pop/20"
-                            : "border-hairline text-slate-700 hover:border-rally-400 hover:bg-rally-50"
+                        key={d.str}
+                        onClick={() => {
+                          setDate(d.str);
+                          setHour(null);
+                        }}
+                        className={`slotBase flex min-w-16 flex-col items-center rounded-control border px-3 py-2.5 ${
+                          active
+                            ? "limeGlow border-lime-pop bg-lime-pop text-night"
+                            : "slotOpen border-hairline bg-raised/50 text-slate-600"
                         }`}
                       >
-                        {formatHour(h)}
-                        {!full && left <= 2 && (
-                          <span className={`mt-0.5 block text-[10px] font-bold ${hour === h ? "text-night/70" : "text-amber-300"}`}>
-                            {left} court{left > 1 ? "s" : ""} left
-                          </span>
-                        )}
+                        <span className="text-[10px] font-bold uppercase tracking-wide opacity-80">
+                          {d.isToday ? "Today" : d.weekday}
+                        </span>
+                        <span className="font-display text-xl font-bold leading-tight">{d.day}</span>
+                        <span className="text-[10px] font-medium uppercase opacity-70">{d.month}</span>
                       </button>
                     );
                   })}
                 </div>
-              )}
-            </div>
+              </section>
 
-            <div className="flex justify-end">
-              <button
-                disabled={!date || hour === null}
-                onClick={() => setStep(1)}
-                className="rounded-full bg-lime-pop px-6 py-2.5 text-sm font-bold text-night transition-colors duration-150 enabled:hover:bg-lime-glow disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        )}
+              <section>
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5">
+                    <StepBadge n={2} active={Boolean(date)} />
+                    <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                      Choose a start time
+                    </h3>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] text-faint">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full bg-lime-pop" /> Selected
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full border border-hairline bg-raised" /> Open
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-2.5 w-2.5 rounded-full border border-dashed border-slate-400" /> Full
+                    </span>
+                  </div>
+                </div>
 
-        {step === 1 && (
-          <div className="slideUp space-y-6">
-            <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">
-              Courts for {formatDate(date)} at {formatHour(hour)}
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2">
-              {courts.map((c) => {
-                const taken = isSlotTaken(date, hour, c.id);
-                return (
-                  <button
-                    key={c.id}
-                    disabled={taken}
-                    onClick={() => setCourtId(c.id)}
-                    className={`flex items-center justify-between rounded-card border p-4 text-left transition-colors duration-150 ${
-                      taken
-                        ? "cursor-not-allowed border-hairline bg-raised opacity-60"
-                        : courtId === c.id
-                        ? "border-lime-pop bg-rally-50 ring-2 ring-lime-pop"
-                        : "border-hairline hover:border-rally-400 hover:bg-rally-50/50"
-                    }`}
-                  >
-                    <div>
-                      <p className="font-display font-bold">{c.name}</p>
-                      <p className="text-xs text-muted">{c.type} · glass walls · LED lighting</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display font-bold text-rally-800">${c.price}</p>
-                      <p className={`text-xs font-semibold ${taken ? "text-faint" : "text-rally-600"}`}>
-                        {taken ? "Full" : "Available"}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="flex justify-between">
-              <button onClick={() => setStep(0)} className="rounded-full px-5 py-2.5 text-sm font-semibold text-muted hover:text-ink">
-                Back
-              </button>
-              <button
-                disabled={!courtId}
-                onClick={() => setStep(2)}
-                className="rounded-full bg-lime-pop px-6 py-2.5 text-sm font-bold text-night transition-colors duration-150 enabled:hover:bg-lime-glow disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        )}
+                {!date ? (
+                  <div className="rounded-control border border-dashed border-hairline bg-night/40 px-4 py-10 text-center">
+                    <Glyph className="mx-auto h-7 w-7 text-faint">
+                      <rect x="3" y="5" width="18" height="16" rx="2" />
+                      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+                    </Glyph>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">Pick a day to see open slots</p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      Fourteen days of court time, ready when you are.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    {dayParts.map((part) => {
+                      const partHours = hours.filter((h) => part.match(h));
+                      if (partHours.length === 0) return null;
+                      return (
+                        <div key={part.name}>
+                          <div className="mb-2.5 flex items-center gap-2">
+                            <Glyph className="h-4 w-4 text-lime-pop/70">{part.icon}</Glyph>
+                            <span className="text-xs font-bold uppercase tracking-[0.14em] text-muted">
+                              {part.name}
+                            </span>
+                            <span className="h-px flex-1 bg-hairline" />
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                            {partHours.map((h) => {
+                              const left = courts.filter((c) => !isSlotTaken(date, h, c.id)).length;
+                              const full = left === 0;
+                              const active = hour === h;
+                              return (
+                                <button
+                                  key={h}
+                                  disabled={full}
+                                  onClick={() => setHour(h)}
+                                  aria-pressed={active}
+                                  className={`slotBase relative rounded-control border px-2 py-2.5 text-sm font-semibold ${
+                                    full
+                                      ? "slotFull border-hairline bg-night/50 text-faint"
+                                      : active
+                                      ? "limeGlow border-lime-pop bg-lime-pop text-night"
+                                      : "slotOpen border-hairline bg-raised/60 text-slate-700"
+                                  }`}
+                                >
+                                  {active && (
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-night text-[9px] font-bold text-lime-pop ring-2 ring-lime-pop">
+                                      ✓
+                                    </span>
+                                  )}
+                                  {formatHour(h)}
+                                  {!full && left <= 2 && (
+                                    <span
+                                      className={`mt-0.5 block text-[10px] font-bold ${
+                                        active ? "text-night/70" : "text-warn"
+                                      }`}
+                                    >
+                                      {left} court{left > 1 ? "s" : ""} left
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
 
-        {step === 2 && (
-          <div className="slideUp space-y-5">
-            <h3 className="font-display text-sm font-bold uppercase tracking-wide text-ink">A couple of details</h3>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-muted">Name on the booking</span>
-                <input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    setError("");
-                  }}
-                  placeholder="e.g. Maya Haddad"
-                  className={`w-full rounded-control border bg-raised px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-rally-500 ${
-                    error ? "border-bad bg-bad/10" : "border-hairline"
-                  }`}
-                />
-                {error && <span className="mt-1 block text-xs font-medium text-bad">{error}</span>}
-              </label>
-              <label className="block">
-                <span className="mb-1.5 block text-xs font-semibold text-muted">Players</span>
-                <div className="flex gap-2">
-                  {[2, 4].map((p) => (
+              <div className="flex justify-end border-t border-hairline pt-5">
+                <button
+                  disabled={!date || hour === null}
+                  onClick={() => setStep(1)}
+                  className="rounded-control bg-lime-pop px-7 py-2.5 text-sm font-bold text-night transition duration-150 enabled:hover:bg-lime-glow enabled:hover:shadow-[0_0_20px_rgba(190,242,100,0.35)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 1 && (
+            <div className="slideUp space-y-6">
+              <div className="flex items-center gap-2.5">
+                <StepBadge n={2} active />
+                <div>
+                  <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                    Court assignment
+                  </h3>
+                  <p className="text-xs text-faint">
+                    {formatDate(date)} at {formatHour(hour)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {courts.map((c) => {
+                  const taken = isSlotTaken(date, hour, c.id);
+                  const active = courtId === c.id;
+                  return (
                     <button
-                      key={p}
-                      onClick={() => setPlayers(p)}
-                      className={`flex-1 rounded-control border py-2.5 text-sm font-semibold transition-colors duration-150 ${
-                        players === p
-                          ? "border-lime-pop bg-rally-50 text-rally-800"
-                          : "border-hairline text-muted hover:border-rally-300"
+                      key={c.id}
+                      disabled={taken}
+                      onClick={() => setCourtId(c.id)}
+                      aria-pressed={active}
+                      className={`slotBase flex flex-col gap-3 rounded-card border p-4 text-left ${
+                        taken
+                          ? "slotFull border-hairline bg-night/40 opacity-60"
+                          : active
+                          ? "border-lime-pop bg-lime-pop/6 shadow-[0_8px_24px_rgba(190,242,100,0.12)]"
+                          : "slotOpen border-hairline bg-raised/50"
                       }`}
                     >
-                      {p} players
-                    </button>
-                  ))}
-                </div>
-              </label>
-            </div>
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold text-muted">Notes (optional)</span>
-              <input
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Need rental rackets, beginner friendly…"
-                className="w-full rounded-control border border-hairline bg-raised px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-rally-500"
-              />
-            </label>
-            <div className="flex justify-between">
-              <button onClick={() => setStep(1)} className="rounded-full px-5 py-2.5 text-sm font-semibold text-muted hover:text-ink">
-                Back
-              </button>
-              <button
-                onClick={() => {
-                  if (!name.trim()) {
-                    setError("Please add a name for the booking.");
-                    return;
-                  }
-                  setStep(3);
-                }}
-                className="rounded-full bg-lime-pop px-6 py-2.5 text-sm font-bold text-night transition-colors duration-150 hover:bg-lime-glow active:scale-[0.98]"
-              >
-                Review booking
-              </button>
-            </div>
-          </div>
-        )}
+                      <div className="flex items-start justify-between gap-2">
+                        <CourtMark active={active} />
+                        {taken ? (
+                          <span className="flex items-center gap-1 rounded-full border border-hairline px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">
+                            <Glyph className="h-3 w-3">
+                              <rect x="5" y="10" width="14" height="10" rx="2" />
+                              <path d="M8 10V7a4 4 0 018 0v3" />
+                            </Glyph>
+                            Booked
+                          </span>
+                        ) : (
+                          <span className="tabularNums font-display text-xl font-bold text-ink">
+                            ${c.price}
+                          </span>
+                        )}
+                      </div>
 
-        {step === 3 && (
-          <div className="slideUp mx-auto max-w-md space-y-5">
-            <h3 className="text-center font-display text-sm font-bold uppercase tracking-wide text-ink">Confirm your booking</h3>
-            <div className="space-y-3 rounded-card bg-raised p-5 text-sm">
-              {[
-                ["Court", `${selectedCourt.name} · ${selectedCourt.type}`],
-                ["When", `${formatDate(date)} at ${formatHour(hour)}`],
-                ["Booked for", `${name || "—"} · ${players} players`],
-                ["Price", `$${selectedCourt.price} for 60 min`],
-              ].map(([k, v]) => (
-                <div key={k} className="flex justify-between gap-4">
-                  <span className="text-faint">{k}</span>
-                  <span className="text-right font-semibold">{v}</span>
-                </div>
-              ))}
-              {notes && (
-                <div className="flex justify-between gap-4">
-                  <span className="text-faint">Notes</span>
-                  <span className="text-right font-medium text-slate-600">{notes}</span>
-                </div>
-              )}
+                      <div>
+                        <p className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                          {c.name}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {[c.type, "Glass walls", "LED lighting"].map((tag) => (
+                            <span
+                              key={tag}
+                              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                                active
+                                  ? "border-lime-pop/40 text-lime-pop"
+                                  : "border-hairline text-faint"
+                              }`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <span
+                        className={`text-xs font-bold uppercase tracking-wide ${
+                          taken ? "text-faint" : active ? "text-lime-pop" : "text-ok"
+                        }`}
+                      >
+                        {taken ? "Full" : active ? "Selected" : "Available"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-between border-t border-hairline pt-5">
+                <button
+                  onClick={() => setStep(0)}
+                  className="rounded-control px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
+                >
+                  Back
+                </button>
+                <button
+                  disabled={!courtId}
+                  onClick={() => setStep(2)}
+                  className="rounded-control bg-lime-pop px-7 py-2.5 text-sm font-bold text-night transition duration-150 enabled:hover:bg-lime-glow enabled:hover:shadow-[0_0_20px_rgba(190,242,100,0.35)] disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Continue
+                </button>
+              </div>
             </div>
-            <div className="flex justify-between">
-              <button onClick={() => setStep(2)} className="rounded-full px-5 py-2.5 text-sm font-semibold text-muted hover:text-ink">
-                Back
-              </button>
-              <button
-                onClick={confirm}
-                className="rounded-full bg-lime-pop px-8 py-2.5 text-sm font-bold text-night shadow-lg shadow-lime-pop/25 transition-colors duration-150 hover:bg-lime-glow active:scale-[0.98]"
-              >
-                Confirm booking
-              </button>
+          )}
+
+          {step === 2 && (
+            <div className="slideUp space-y-5">
+              <div className="flex items-center gap-2.5">
+                <StepBadge n={3} active />
+                <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                  A couple of details
+                </h3>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+                    Name on the booking
+                  </span>
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      setError("");
+                    }}
+                    placeholder="e.g. Maya Haddad"
+                    className={`w-full rounded-control border bg-night/60 px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-lime-pop ${
+                      error ? "border-bad bg-bad/10" : "border-hairline"
+                    }`}
+                  />
+                  {error && <span className="mt-1 block text-xs font-medium text-bad">{error}</span>}
+                </label>
+                <label className="block">
+                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+                    Players
+                  </span>
+                  <div className="flex gap-2">
+                    {[2, 4].map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPlayers(p)}
+                        aria-pressed={players === p}
+                        className={`slotBase flex-1 rounded-control border py-2.5 text-sm font-semibold ${
+                          players === p
+                            ? "border-lime-pop bg-lime-pop/10 text-lime-pop"
+                            : "slotOpen border-hairline bg-raised/50 text-muted"
+                        }`}
+                      >
+                        {p} players
+                      </button>
+                    ))}
+                  </div>
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-muted">
+                  Notes (optional)
+                </span>
+                <input
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Need rental rackets, beginner friendly…"
+                  className="w-full rounded-control border border-hairline bg-night/60 px-4 py-2.5 text-sm outline-none transition-colors duration-150 focus:border-lime-pop"
+                />
+              </label>
+
+              <div className="flex justify-between border-t border-hairline pt-5">
+                <button
+                  onClick={() => setStep(1)}
+                  className="rounded-control px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={() => {
+                    if (!name.trim()) {
+                      setError("Please add a name for the booking.");
+                      return;
+                    }
+                    setStep(3);
+                  }}
+                  className="rounded-control bg-lime-pop px-7 py-2.5 text-sm font-bold text-night transition duration-150 hover:bg-lime-glow hover:shadow-[0_0_20px_rgba(190,242,100,0.35)] active:scale-[0.98]"
+                >
+                  Review booking
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {step === 3 && (
+            <div className="slideUp space-y-5">
+              <div className="flex items-center gap-2.5">
+                <StepBadge n={4} active />
+                <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                  Confirm your booking
+                </h3>
+              </div>
+
+              <div className="space-y-3 rounded-card border border-hairline bg-night/40 p-5 text-sm">
+                {[
+                  ["Court", `${selectedCourt.name} · ${selectedCourt.type}`],
+                  ["When", `${formatDate(date)} at ${formatHour(hour)}`],
+                  ["Booked for", `${name || "—"} · ${players} players`],
+                  ["Price", `$${selectedCourt.price} for 60 min`],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex justify-between gap-4">
+                    <span className="text-faint">{k}</span>
+                    <span className="text-right font-semibold text-ink">{v}</span>
+                  </div>
+                ))}
+                {notes && (
+                  <div className="flex justify-between gap-4">
+                    <span className="text-faint">Notes</span>
+                    <span className="text-right font-medium text-slate-600">{notes}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-between border-t border-hairline pt-5">
+                <button
+                  onClick={() => setStep(2)}
+                  className="rounded-control px-5 py-2.5 text-sm font-semibold text-muted transition-colors hover:text-ink"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={confirm}
+                  className="limeGlow rounded-control bg-lime-pop px-8 py-2.5 text-sm font-bold text-night transition duration-150 hover:bg-lime-glow active:scale-[0.98]"
+                >
+                  Confirm booking
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="riseIn min-w-0" style={{ "--d": "120ms" }}>
+          <SummaryRail
+            date={date}
+            hour={hour}
+            court={selectedCourt}
+            name={name}
+            players={players}
+            notes={notes}
+            step={step}
+          />
+        </div>
       </div>
 
       {activeUserBookings.length > 0 && (
-        <div className="rounded-card border border-hairline bg-card p-5 shadow-lg shadow-black/20">
-          <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-ink">
+        <div className="glassCard rounded-card p-5 shadow-lg shadow-black/20">
+          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-ink">
             Your upcoming bookings
           </h3>
           <div className="space-y-2">
             {activeUserBookings.map((b) => (
               <div
                 key={b.ref}
-                className="group flex flex-wrap items-center justify-between gap-2 rounded-control bg-rally-50/60 px-4 py-3 text-sm"
+                className="group flex flex-wrap items-center justify-between gap-2 rounded-control border border-hairline bg-raised/40 px-4 py-3 text-sm transition-colors duration-150 hover:border-rally-300"
               >
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="tabularNums font-mono text-xs font-bold text-rally-700">{b.ref}</span>
+                  <span className="tabularNums rounded-md border border-hairline bg-night/60 px-2 py-1 font-mono text-[11px] font-bold text-lime-pop">
+                    {b.ref}
+                  </span>
                   <span className="font-semibold text-ink">{b.court}</span>
                   <span className="text-muted">
                     {formatDate(b.date)} · {formatHour(b.hour)}
@@ -394,11 +710,11 @@ export default function BookingTab() {
                 </div>
                 <div className="flex items-center gap-2">
                   {b.source === "chat" && (
-                    <span className="rounded-full bg-rally-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-rally-800">
+                    <span className="rounded-full border border-lime-pop/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-lime-pop">
                       via chat
                     </span>
                   )}
-                  <span className="text-xs font-semibold text-ok">Confirmed</span>
+                  <span className="text-xs font-bold uppercase tracking-wide text-ok">Confirmed</span>
                   <button
                     onClick={() => cancelBooking(b)}
                     aria-label={`Cancel booking ${b.ref}`}
