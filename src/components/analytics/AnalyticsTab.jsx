@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { generateHistory } from "../../data/mockData";
 import { useApp } from "../../store";
 import KpiCards from "./KpiCards";
@@ -7,8 +7,8 @@ import OccupancyHeatmap from "./OccupancyHeatmap";
 import BookingsTable from "./BookingsTable";
 
 export default function AnalyticsTab() {
-  const [range, setRange] = useState(7);
-  const { isSlotTaken } = useApp();
+  // range comes from the store so Coach can align it with a figure it quoted
+  const { isSlotTaken, range, setRange } = useApp();
   // same predicate the heatmap and slot picker use, so bookings and
   // cancellations move the KPIs and charts too
   const history = useMemo(() => generateHistory(60, isSlotTaken), [isSlotTaken]);

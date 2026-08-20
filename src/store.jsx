@@ -18,6 +18,9 @@ const slotKey = (date, hour, courtId) => `${date}|${hour}|${courtId}`;
 
 export function AppProvider({ children }) {
   const [activeTab, setActiveTab] = useState("analytics");
+  // the analytics window lives here rather than in the tab, so Coach can put the
+  // dashboard on the same period as the figure it just quoted
+  const [range, setRange] = useState(7);
   const [seedRows] = useState(() => generateRecentBookings());
   const [demoRows] = useState(() => generateDemoBookings());
   const [demoMode, setDemoMode] = useState(false);
@@ -39,6 +42,17 @@ export function AppProvider({ children }) {
     clearTimeout(focusTimer.current);
     setHeatmapFocus(hour);
     focusTimer.current = setTimeout(() => setHeatmapFocus(null), 6000);
+  }, []);
+
+  // When Coach sends you to Analytics for a specific metric, that KPI card
+  // lights up and is scrolled to, so "open full analytics" lands on the number
+  // you asked about instead of just the tab.
+  const [metricFocus, setMetricFocus] = useState(null);
+  const metricTimer = useRef(null);
+  const focusMetric = useCallback((metric) => {
+    clearTimeout(metricTimer.current);
+    setMetricFocus(metric);
+    metricTimer.current = setTimeout(() => setMetricFocus(null), 6000);
   }, []);
 
   const cancelledSlots = useMemo(() => {
@@ -219,6 +233,10 @@ export function AppProvider({ children }) {
     dismissToast,
     heatmapFocus,
     focusHour,
+    metricFocus,
+    focusMetric,
+    range,
+    setRange,
     todayStr: toDateStr(new Date()),
   };
 

@@ -147,6 +147,40 @@ export function getHeatmap(days, isSlotTaken) {
 }
 
 /**
+ * Busiest start hour across a set of days, and how many bookings sit on it.
+ *
+ * Shared so the Analytics KPI card and Coach's chat snippet cannot disagree:
+ * Coach used to report a hardcoded 7:00 PM while the dashboard computed the
+ * real peak from the data.
+ */
+export function peakHourFor(days, isSlotTaken) {
+  const taken = isSlotTaken || isSlotPreBooked;
+  const byHour = {};
+  for (const day of days) {
+    for (let h = openHour; h < closeHour; h++) {
+      for (const c of courts) {
+        if (taken(day.date, h, c.id)) byHour[h] = (byHour[h] || 0) + 1;
+      }
+    }
+  }
+  const entries = Object.entries(byHour).sort((a, b) => b[1] - a[1]);
+  const hour = Number(entries[0]?.[0] ?? 19);
+  return { hour, count: byHour[hour] || 0 };
+}
+
+/** Bookings on one specific hour across a set of days, for period-on-period deltas. */
+export function countAtHour(days, hour, isSlotTaken) {
+  const taken = isSlotTaken || isSlotPreBooked;
+  let count = 0;
+  for (const day of days) {
+    for (const c of courts) {
+      if (taken(day.date, hour, c.id)) count++;
+    }
+  }
+  return count;
+}
+
+/**
  * The single busiest weekday-and-hour pairing over the given window.
  * Used by the assistant to open with a real insight rather than a canned line.
  */
@@ -228,10 +262,15 @@ export function getClubDigest(isSlotTaken) {
     `Occupancy last 7 days: ${Math.round((bookings / slots) * 100)}% of all court hours.`,
     `Bookings per court last 7 days: ${ranked.map(([n, v]) => `${n} ${v}`).join(", ")}.`,
     `Most used court: ${ranked[0][0]}. Least used court: ${ranked[ranked.length - 1][0]}.`,
-    `Busiest hours: ${sortedHours.slice(0, 3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
-    `Quietest hours: ${sortedHours.slice(-3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
+    // Labelled by window and aggregation. Both of these lines used to read as
+    // plain "busiest" facts, so Coach would quote the weekday pairing in its
+    // reply while the KPI card beside it showed the hour-of-day peak, and the
+    // two looked like they contradicted each other.
+    `Peak hour of the day, last 7 days (this is what the Peak hour card shows): ${formatHour(sortedHours[0].hour)} (${Math.round(sortedHours[0].rate * 100)}% full).`,
+    `Next busiest hours, last 7 days: ${sortedHours.slice(1, 3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
+    `Quietest hours, last 7 days: ${sortedHours.slice(-3).map((h) => `${formatHour(h.hour)} (${Math.round(h.rate * 100)}%)`).join(", ")}.`,
     busiest
-      ? `Busiest weekday and hour overall: ${busiest.weekdayName} at ${busiest.hourLabel} (${busiest.occupancyPct}% full).`
+      ? `Busiest single weekday-and-hour pairing over the last 30 days (a different, narrower stat than the peak hour above): ${busiest.weekdayName} at ${busiest.hourLabel} (${busiest.occupancyPct}% full).`
       : "",
   ]
     .filter(Boolean)

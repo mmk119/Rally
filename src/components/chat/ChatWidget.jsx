@@ -7,6 +7,8 @@ import {
   generateHistory,
   getBusiestSlot,
   getClubDigest,
+  peakHourFor,
+  countAtHour,
   formatDate,
   formatHour,
   openHour,
@@ -163,7 +165,13 @@ function KpiCard({ metric, onViewTab }) {
     const prevBookings = sum(prev, "bookings") || 1;
     const revenue = sum(week, "revenue");
     const prevRevenue = sum(prev, "revenue") || 1;
-    const occupancy = (bookings / (7 * courts.length * (closeHour - openHour))) * 100;
+    const slotsPerWeek = 7 * courts.length * (closeHour - openHour);
+    const occupancy = (bookings / slotsPerWeek) * 100;
+    // occupancy against its OWN previous period, not the bookings change
+    const prevOccupancy = (sum(prev, "bookings") / slotsPerWeek) * 100;
+    // the real busiest hour, from the same helper the dashboard uses
+    const { hour: peak, count: peakCount } = peakHourFor(week, isSlotTaken);
+    const prevPeakCount = countAtHour(prev, peak, isSlotTaken);
     return {
       spark: week.map((d) => ({ v: d.bookings })),
       bookings,
@@ -171,14 +179,19 @@ function KpiCard({ metric, onViewTab }) {
       revenue,
       revenueDelta: ((revenue - prevRevenue) / prevRevenue) * 100,
       occupancy,
+      // a share moves in percentage POINTS, not percent
+      occupancyDelta: occupancy - prevOccupancy,
+      peak,
+      peakCount,
+      peakDelta: prevPeakCount ? ((peakCount - prevPeakCount) / prevPeakCount) * 100 : 0,
     };
   }, [isSlotTaken]);
 
   const rows = {
     bookings: { label: "Bookings this week", value: stats.bookings.toLocaleString(), delta: stats.bookingsDelta },
     revenue: { label: "Revenue this week", value: `$${stats.revenue.toLocaleString()}`, delta: stats.revenueDelta },
-    occupancy: { label: "Occupancy this week", value: `${stats.occupancy.toFixed(0)}%`, delta: stats.bookingsDelta },
-    peak: { label: "Peak hour", value: "7:00 PM", delta: null },
+    occupancy: { label: "Occupancy this week", value: `${stats.occupancy.toFixed(0)}%`, delta: stats.occupancyDelta, unit: "pp" },
+    peak: { label: "Peak hour", value: formatHour(stats.peak), delta: stats.peakDelta },
   };
   const main = rows[metric] || rows.bookings;
 
@@ -189,7 +202,8 @@ function KpiCard({ metric, onViewTab }) {
         <span className="tabularNums font-display text-2xl font-bold leading-none text-ink">{main.value}</span>
         {main.delta !== null && (
           <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${main.delta >= 0 ? "bg-ok/12 text-ok" : "bg-bad/12 text-bad"}`}>
-            {main.delta >= 0 ? "▲" : "▼"} {Math.abs(main.delta).toFixed(1)}%
+            {main.delta >= 0 ? "▲" : "▼"} {Math.abs(main.delta).toFixed(1)}
+            {main.unit === "pp" ? " pp" : "%"}
           </span>
         )}
       </div>
@@ -208,7 +222,7 @@ function KpiCard({ metric, onViewTab }) {
       </div>
       <p className="mt-1 text-[11px] text-faint">Last 7 days · vs the week before</p>
       <button
-        onClick={onViewTab}
+        onClick={() => onViewTab(metric, stats.peak)}
         className="mt-2 w-full rounded-control border border-hairline py-1.5 text-xs font-bold text-lime-pop transition-colors duration-150 hover:border-lime-pop/40 hover:bg-lime-pop/8"
       >
         Open full analytics
@@ -264,6 +278,8 @@ export default function ChatWidget() {
     findNearestOpenHour,
     isSlotTaken,
     focusHour,
+    focusMetric,
+    setRange,
     activeUserBookings,
   } = useApp();
   const [open, setOpen] = useState(false);
@@ -544,6 +560,23 @@ export default function ChatWidget() {
     return { card, extraText, replyOverride };
   };
 
+  /**
+   * Deep link from a chat snippet into the dashboard. Switching the tab alone
+   * dropped you on Analytics with nothing indicating which figure you asked
+   * about, and on whatever period happened to be selected — so the numbers
+   * could disagree with the card you just clicked.
+   */
+  const openAnalyticsAt = (metric, peakHour) => {
+    // step out of the way: the panel sits over the right of the dashboard, which
+    // is exactly where the highlighted KPI card lands
+    setOpen(false);
+    setActiveTab("analytics");
+    setRange(7); // the snippet quotes the last 7 days; match it
+    focusMetric(metric);
+    // for peak, point the heatmap at the same hour the card names
+    if (metric === "peak" && peakHour != null) focusHour(peakHour);
+  };
+
   /** Resolves a pending cancel card in place, so the transcript keeps its history. */
   const resolveCancel = (messageIndex, booking, confirmed) => {
     if (confirmed) cancelBooking(booking);
@@ -806,10 +839,16 @@ export default function ChatWidget() {
                     {/* cards wait for the sentence to finish, so the reply reads
                         before the supporting detail lands */}
                     {!m.revealing && m.card?.type === "booking" && (
-                      <BookingCard booking={m.card.booking} onViewTab={() => setActiveTab("booking")} />
+                      <BookingCard
+                        booking={m.card.booking}
+                        onViewTab={() => {
+                          setOpen(false);
+                          setActiveTab("booking");
+                        }}
+                      />
                     )}
                     {!m.revealing && m.card?.type === "kpi" && (
-                      <KpiCard metric={m.card.metric} onViewTab={() => setActiveTab("analytics")} />
+                      <KpiCard metric={m.card.metric} onViewTab={openAnalyticsAt} />
                     )}
                     {!m.revealing && m.card?.type === "cancel" && (
                       <CancelCard

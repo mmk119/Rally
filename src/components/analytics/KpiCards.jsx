@@ -1,5 +1,5 @@
-import { useMemo } from "react";
-import { courts, openHour, closeHour, formatHour } from "../../data/mockData";
+import { useEffect, useMemo, useRef } from "react";
+import { courts, openHour, closeHour, formatHour, peakHourFor, countAtHour } from "../../data/mockData";
 import { useApp } from "../../store";
 import { useCountUp } from "../../lib/useCountUp";
 
@@ -39,9 +39,19 @@ function Trend({ delta, unit = "%" }) {
  * row stays calm at rest and still rewards a pass of the cursor.
  * `meter` (0..1) draws the fill bar used by occupancy.
  */
-function Card({ label, value, delta, hint, icon, meter, unit }) {
+function Card({ label, value, delta, hint, icon, meter, unit, focused }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (focused) ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focused]);
+
   return (
-    <div className="glassCard group relative overflow-hidden rounded-card p-5 shadow-lg shadow-black/20 transition-colors duration-200 hover:border-rally-300">
+    <div
+      ref={ref}
+      className={`glassCard group relative overflow-hidden rounded-card p-5 shadow-lg shadow-black/20 transition-colors duration-200 hover:border-rally-300 ${
+        focused ? "border-lime-pop ring-2 ring-lime-pop ring-offset-2 ring-offset-night" : ""
+      }`}
+    >
       <span
         className="absolute inset-x-0 top-0 h-px scale-x-0 bg-gradient-to-r from-transparent via-lime-pop to-transparent opacity-0 transition-all duration-300 group-hover:scale-x-100 group-hover:opacity-70"
         aria-hidden="true"
@@ -77,7 +87,7 @@ function Card({ label, value, delta, hint, icon, meter, unit }) {
 }
 
 export default function KpiCards({ visible, previous }) {
-  const { isSlotTaken } = useApp();
+  const { isSlotTaken, metricFocus } = useApp();
 
   const stats = useMemo(() => {
     const sum = (rows, key) => rows.reduce((a, r) => a + r[key], 0);
@@ -90,25 +100,10 @@ export default function KpiCards({ visible, previous }) {
     const occupancy = (bookings / totalSlots) * 100;
     const prevOccupancy = (sum(previous, "bookings") / (previous.length * courts.length * (closeHour - openHour) || 1)) * 100 || 1;
 
-    // busiest start hour across the visible window
-    const byHour = {};
-    for (const day of visible) {
-      for (let h = openHour; h < closeHour; h++) {
-        for (const c of courts) {
-          if (isSlotTaken(day.date, h, c.id)) byHour[h] = (byHour[h] || 0) + 1;
-        }
-      }
-    }
-    const peak = Object.entries(byHour).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 19;
-
+    // shared helper, so Coach's chat snippet reports the same peak hour
+    const { hour: peak, count: peakCount } = peakHourFor(visible, isSlotTaken);
     // how demand at that same peak hour moved vs the previous period
-    let prevPeakCount = 0;
-    for (const day of previous) {
-      for (const c of courts) {
-        if (isSlotTaken(day.date, Number(peak), c.id)) prevPeakCount++;
-      }
-    }
-    const peakCount = byHour[peak] || 0;
+    const prevPeakCount = countAtHour(previous, peak, isSlotTaken);
     const peakDelta = prevPeakCount ? ((peakCount - prevPeakCount) / prevPeakCount) * 100 : 0;
 
     return {
@@ -120,7 +115,7 @@ export default function KpiCards({ visible, previous }) {
       revenueDelta: ((revenue - prevRevenue) / prevRevenue) * 100,
       occupancy,
       occupancyDelta: occupancy - prevOccupancy,
-      peak: Number(peak),
+      peak,
     };
   }, [visible, previous, isSlotTaken]);
 
@@ -138,6 +133,7 @@ export default function KpiCards({ visible, previous }) {
         delta={stats.bookingsDelta}
         hint="vs previous period"
         icon={icons.bookings}
+        focused={metricFocus === "bookings"}
       />
       <Card
         label="Revenue"
@@ -145,6 +141,7 @@ export default function KpiCards({ visible, previous }) {
         delta={stats.revenueDelta}
         hint="vs previous period"
         icon={icons.revenue}
+        focused={metricFocus === "revenue"}
       />
       <Card
         label="Occupancy"
@@ -152,6 +149,7 @@ export default function KpiCards({ visible, previous }) {
         delta={stats.occupancyDelta}
         hint="of all court hours"
         icon={icons.occupancy}
+        focused={metricFocus === "occupancy"}
         unit="pp"
         meter={stats.occupancy / 100}
       />
@@ -161,6 +159,7 @@ export default function KpiCards({ visible, previous }) {
         delta={stats.peakDelta}
         hint={`${Math.round(peakCountUp)} bookings at this hour`}
         icon={icons.peak}
+        focused={metricFocus === "peak"}
       />
     </div>
   );
