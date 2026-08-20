@@ -11,18 +11,25 @@ const icons = {
   peak: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5.2l3.4 2" strokeLinecap="round" /></>,
 };
 
-function Trend({ delta }) {
+/**
+ * `unit` distinguishes a relative change from an absolute one: occupancy moves
+ * by percentage POINTS, so rendering it with a % suffix beside the true
+ * percentage changes on the other cards was quietly misreporting it.
+ */
+function Trend({ delta, unit = "%" }) {
   const up = delta >= 0;
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
         up ? "bg-ok/12 text-ok" : "bg-bad/12 text-bad"
       }`}
+      title={unit === "pp" ? "change in percentage points vs the previous period" : "percentage change vs the previous period"}
     >
       <svg viewBox="0 0 12 12" className={`h-2.5 w-2.5 ${up ? "" : "rotate-180"}`} fill="currentColor">
         <path d="M6 2l4 5H2l4-5z" />
       </svg>
-      {Math.abs(delta).toFixed(1)}%
+      {Math.abs(delta).toFixed(1)}
+      {unit === "pp" ? " pp" : "%"}
     </span>
   );
 }
@@ -32,7 +39,7 @@ function Trend({ delta }) {
  * row stays calm at rest and still rewards a pass of the cursor.
  * `meter` (0..1) draws the fill bar used by occupancy.
  */
-function Card({ label, value, delta, hint, icon, meter }) {
+function Card({ label, value, delta, hint, icon, meter, unit }) {
   return (
     <div className="glassCard group relative overflow-hidden rounded-card p-5 shadow-lg shadow-black/20 transition-colors duration-200 hover:border-rally-300">
       <span
@@ -52,7 +59,7 @@ function Card({ label, value, delta, hint, icon, meter }) {
         <span className="tabularNums font-display text-4xl font-bold leading-none tracking-tight text-ink">
           {value}
         </span>
-        {delta !== null && <Trend delta={delta} />}
+        {delta !== null && <Trend delta={delta} unit={unit} />}
       </div>
 
       {meter !== undefined && (
@@ -145,6 +152,7 @@ export default function KpiCards({ visible, previous }) {
         delta={stats.occupancyDelta}
         hint="of all court hours"
         icon={icons.occupancy}
+        unit="pp"
         meter={stats.occupancy / 100}
       />
       <Card

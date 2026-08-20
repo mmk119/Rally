@@ -1,6 +1,0 @@
-{
-  "name": "Rally",
-  "description": "Elite padel court reservation and club analytics platform with AI Coach.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

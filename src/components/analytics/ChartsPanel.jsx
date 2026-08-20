@@ -43,7 +43,7 @@ function ChartCard({ title, subtitle, aside, children }) {
     <div className="glassCard flex h-full flex-col rounded-card p-5 shadow-lg shadow-black/20">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">{title}</h3>
+          <h2 className="font-display text-base font-bold uppercase tracking-wide text-ink">{title}</h2>
           <p className="text-xs text-faint">{subtitle}</p>
         </div>
         {aside}

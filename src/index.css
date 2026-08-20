@@ -25,7 +25,11 @@
   /* text */
   --color-ink: #f5f7f4;
   --color-muted: #9ba8a0;
-  --color-faint: #5f6b64;
+  /* Tertiary text. Lifted from #5f6b64, which measured 3.47:1 on the base and
+     2.89:1 on raised surfaces and so failed WCAG AA (4.5:1) everywhere it was
+     used for labels. This is the same hue, raised until it clears AA on the
+     lightest surface it ever sits on: 5.46 / 4.99 / 4.54 on night / card / raised. */
+  --color-faint: #7c8c83;
 
   /* status, deliberately muted so only the lime pops */
   --color-ok: #4ade80;
@@ -187,6 +191,20 @@ body {
 }
 .tabularNums {
   font-variant-numeric: tabular-nums;
+}
+
+/* Available to assistive tech, removed from the visual layout. Used to pair a
+   graphical view (the heatmap) with the same numbers as a real table. */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* consistent focus ring in the accent color across every control */

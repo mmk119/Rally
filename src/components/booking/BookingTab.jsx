@@ -233,7 +233,7 @@ function SummaryRail({ dates, hour, court, name, players, notes, step }) {
   return (
     <aside className="glassCard sticky top-6 overflow-hidden rounded-card shadow-lg shadow-black/20">
       <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
-        <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">Summary</h3>
+        <h2 className="font-display text-base font-bold uppercase tracking-wide text-ink">Summary</h2>
         <Glyph className="h-4 w-4 text-faint">
           <path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3z" strokeLinejoin="round" />
           <path d="M9.5 8h5M9.5 12h5" strokeLinecap="round" />
@@ -381,23 +381,23 @@ export default function BookingTab() {
    * both are re-checked against the new set rather than left silently wrong.
    */
   const toggleDate = (dayStr) => {
-    setDates((prev) => {
-      const next = prev.includes(dayStr)
-        ? prev.filter((d) => d !== dayStr) // clicking a chosen day clears it
-        : [...prev, dayStr].sort();
+    // computed outside the updater: a state updater has to stay pure, and React
+    // invokes it twice in StrictMode, which would run these setters twice too
+    const next = dates.includes(dayStr)
+      ? dates.filter((d) => d !== dayStr) // clicking a chosen day clears it
+      : [...dates, dayStr].sort();
 
-      if (hour !== null) {
-        const stillOpen =
-          next.length > 0 && next.every((d) => courts.some((c) => !isSlotTaken(d, hour, c.id)));
-        if (!stillOpen) {
-          setHour(null);
-          setCourtId(null);
-        } else if (courtId !== null && next.some((d) => isSlotTaken(d, hour, courtId))) {
-          setCourtId(null);
-        }
+    if (hour !== null) {
+      const stillOpen =
+        next.length > 0 && next.every((d) => courts.some((c) => !isSlotTaken(d, hour, c.id)));
+      if (!stillOpen) {
+        setHour(null);
+        setCourtId(null);
+      } else if (courtId !== null && next.some((d) => isSlotTaken(d, hour, courtId))) {
+        setCourtId(null);
       }
-      return next;
-    });
+    }
+    setDates(next);
   };
 
   const reset = () => {
@@ -458,9 +458,9 @@ export default function BookingTab() {
               <section>
                 <div className="mb-3 flex flex-wrap items-center gap-2.5">
                   <StepBadge n={1} active />
-                  <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                  <h2 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                     Choose a day
-                  </h3>
+                  </h2>
                   {/* multi select is not discoverable on its own, so say it */}
                   <span className="text-xs text-faint">
                     {dates.length > 1
@@ -511,9 +511,9 @@ export default function BookingTab() {
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2.5">
                     <StepBadge n={2} active={dates.length > 0} />
-                    <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                    <h2 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                       Choose a start time
-                    </h3>
+                    </h2>
                   </div>
                   <div className="flex items-center gap-3 text-[11px] text-faint">
                     <span className="flex items-center gap-1.5">
@@ -615,9 +615,9 @@ export default function BookingTab() {
               <div className="flex items-center gap-2.5">
                 <StepBadge n={2} active />
                 <div>
-                  <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                  <h2 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                     Court assignment
-                  </h3>
+                  </h2>
                   <p className="text-xs text-faint">
                     {dates.length > 1
                       ? `${dates.length} days at ${formatHour(hour)} · must be free on all of them`
@@ -715,9 +715,9 @@ export default function BookingTab() {
             <div className="slideUp space-y-5">
               <div className="flex items-center gap-2.5">
                 <StepBadge n={3} active />
-                <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                <h2 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                   A couple of details
-                </h3>
+                </h2>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
@@ -800,9 +800,9 @@ export default function BookingTab() {
             <div className="slideUp space-y-5">
               <div className="flex items-center gap-2.5">
                 <StepBadge n={4} active />
-                <h3 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
+                <h2 className="font-display text-lg font-bold uppercase tracking-wide text-ink">
                   Confirm your booking
-                </h3>
+                </h2>
               </div>
 
               <div className="space-y-3 rounded-card border border-hairline bg-night/40 p-5 text-sm">
@@ -874,9 +874,9 @@ export default function BookingTab() {
 
       {activeUserBookings.length > 0 && (
         <div className="glassCard rounded-card p-5 shadow-lg shadow-black/20">
-          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-ink">
+          <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-ink">
             Your upcoming bookings
-          </h3>
+          </h2>
           <div className="space-y-2">
             {activeUserBookings.map((b) => (
               <div

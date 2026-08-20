@@ -279,6 +279,7 @@ export default function ChatWidget() {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const abortRef = useRef(null);
+  const launcherRef = useRef(null);
 
   const last = messages[messages.length - 1];
   const revealing = Boolean(last?.revealing);
@@ -320,6 +321,34 @@ export default function ChatWidget() {
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: revealing ? "auto" : "smooth" });
   }, [messages, typing, open, atBottom, revealing]);
+
+  /**
+   * Dialog behaviour: Escape closes, focus moves into the composer on open and
+   * returns to the launcher on close, so the panel can be used and left without
+   * a mouse instead of stranding keyboard focus behind it.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const t = setTimeout(() => inputRef.current?.focus(), 60);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      clearTimeout(t);
+    };
+  }, [open]);
+
+  // hand focus back to the launcher when the panel closes, but not on first mount
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (wasOpen.current && !open) launcherRef.current?.focus();
+    wasOpen.current = open;
+  }, [open]);
 
   // A pulse on the launcher invites the click that reveals Coach's opening insight.
   useEffect(() => {
@@ -465,6 +494,10 @@ export default function ChatWidget() {
         date: action.newDate,
         hour: action.newHour,
         customer: original.customer,
+        // a move should carry the booking's details across, not silently reset
+        // them to the defaults
+        players: original.players,
+        notes: original.notes,
         source: "chat",
       });
       return {
@@ -648,6 +681,7 @@ export default function ChatWidget() {
     <>
       {/* floating launcher */}
       <button
+        ref={launcherRef}
         onClick={() => setOpen(true)}
         aria-label="Open Coach"
         aria-expanded={open}
@@ -674,7 +708,11 @@ export default function ChatWidget() {
       {/* panel */}
       {open && (
         // full height sheet on phones, floating panel from tablet up
-        <div className="panelIn glassCard fixed inset-x-0 bottom-0 top-0 z-40 flex flex-col overflow-hidden shadow-2xl shadow-black/50 sm:inset-x-auto sm:inset-y-auto sm:bottom-24 sm:right-5 sm:top-auto sm:h-[560px] sm:max-h-[calc(100vh-8rem)] sm:w-[400px] sm:rounded-card">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Coach, the Rally assistant"
+          className="panelIn glassCard fixed inset-x-0 bottom-0 top-0 z-40 flex flex-col overflow-hidden shadow-2xl shadow-black/50 sm:inset-x-auto sm:inset-y-auto sm:bottom-24 sm:right-5 sm:top-auto sm:h-[560px] sm:max-h-[calc(100vh-8rem)] sm:w-[400px] sm:rounded-card">
           <div className="flex items-center gap-3 border-b border-hairline bg-raised/60 px-5 py-4 text-ink">
             <CoachAvatar />
             <div className="flex-1">

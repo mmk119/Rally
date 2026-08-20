@@ -62,6 +62,21 @@ The bot sends the conversation to the OpenAI API (`gpt-4o-mini`) with a strict J
 
 The loading skeleton shows on load and whenever the date range changes. The empty state appears when a table search matches nothing. To see the table's error state, add `?failTable=1` to the dev server URL — the first fetch fails and Retry recovers it.
 
+## Accessibility
+
+- Every text colour clears **WCAG AA** (4.5:1). The tertiary token was measuring
+  3.47:1 and was lifted to `#7c8c83`, which scores 5.46 / 4.99 / 4.54 on the
+  base, card and raised surfaces.
+- Coach is a real dialog: `role="dialog"`, `aria-modal`, a label, **Escape to
+  close**, focus moves into the composer on open and returns to the launcher on
+  close.
+- The occupancy heatmap is colour only, so the same numbers are also exposed as
+  a real `<table>` with row and column headers for screen readers, while the
+  visual grid is `aria-hidden`. Cells are not individually focusable on purpose
+  — that would add 56 tab stops.
+- One `h1` per view with `h2` sections, a visible focus ring on every control,
+  and all motion disabled under `prefers-reduced-motion`.
+
 ## Assumptions
 
 - Slots are one hour, daily from 8:00 to 22:00, across four courts with different prices.

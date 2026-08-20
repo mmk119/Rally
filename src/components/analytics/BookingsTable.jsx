@@ -101,9 +101,9 @@ export default function BookingsTable({ rangeKey }) {
     <div className="glassCard overflow-hidden rounded-card shadow-lg shadow-black/20">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-hairline px-5 py-4">
         <div>
-          <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">
+          <h2 className="font-display text-base font-bold uppercase tracking-wide text-ink">
             Recent bookings
-          </h3>
+          </h2>
           <p className="text-xs text-faint">Click a column to sort · hover a row to cancel</p>
         </div>
         <input

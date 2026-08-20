@@ -52,9 +52,9 @@ export default function OccupancyHeatmap({ range }) {
     <div className="glassCard rounded-card p-5 shadow-lg shadow-black/20">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h3 className="font-display text-base font-bold uppercase tracking-wide text-ink">
+          <h2 className="font-display text-base font-bold uppercase tracking-wide text-ink">
             Occupancy heatmap
-          </h3>
+          </h2>
           <p className="text-xs text-faint">
             Share of days booked, by court and start time (8am to 10pm), last {range} days
           </p>
@@ -70,8 +70,45 @@ export default function OccupancyHeatmap({ range }) {
         </div>
       </div>
 
+      {/*
+        The colour grid carries no text, so on its own it is unreadable to a
+        screen reader. Rather than making 56 cells focusable — which would add
+        56 tab stops for a keyboard user — the same numbers are exposed once as
+        a real table, and the visual grid is hidden from assistive tech.
+      */}
+      {/* the clip lives on a wrapping div: a table under auto layout treats
+          width as a minimum and expands to its content, which pushed the page
+          wider than the viewport when .srOnly was applied to the table itself */}
+      <div className="srOnly">
+      <table>
+        <caption>
+          Occupancy by court and start time, share of days booked over the last {range} days
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Court</th>
+            {hours.map((h) => (
+              <th key={h} scope="col">
+                {shortHour(h)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.court}>
+              <th scope="row">{row.court}</th>
+              {row.cells.map((cell) => (
+                <td key={cell.hour}>{Math.round(cell.ratio * 100)}% booked</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      </div>
+
       {/* narrow screens scroll the grid rather than squeezing or overflowing the page */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto" aria-hidden="true">
         <div className="min-w-[680px]">
           <div
             className="grid gap-1"
