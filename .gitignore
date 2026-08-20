@@ -3,6 +3,7 @@ CLAUDE.md
 *.pdf
 docs/
 .claude/
+walkthrough-script.html
 
 # Dependencies
 node_modules/
